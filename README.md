@@ -1,2 +1,5 @@
-# darkgen
-generator studies emerging jets
+# honrpythia
+
+source PYTHIA_setup.csh
+make pythiaTree
+./pythiaTree
