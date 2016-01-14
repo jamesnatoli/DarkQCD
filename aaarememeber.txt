@@ -1,0 +1,4 @@
+.x analyse.C
+
+to compile
+.x+ analyse.C
