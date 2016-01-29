@@ -4,7 +4,7 @@
 // Please respect the MCnet Guidelines, see GUIDELINES for details.
 
 // This is a simple test program.
-// It studies the charged multiplicity distribution at the LHC.
+// It studies the chargd multiplicity distribution at the LHC.
 // Modified by Rene Brun, Axel Naumann and Bernhard Meirose
 // to use ROOT for histogramming.
 
@@ -105,13 +105,20 @@ int main(int argc, char* argv[]) {
   TH2F *hjetncncd = new TH2F("hjetncncd","number of particles in jet versus number that are dark pi or rho descendents",100,0.,100.,100,0.,100.);
   TH1F *hjetpp = new TH1F("hjetpp"," number of particles in jet not dark pi or rho descendents",100,0.,100.);
   TH1F *hjetncdqj = new TH1F("hjetncdqj","number of particles in dark quark jet",150,0.,150.);
-  TH2F *hjetncdqjvpt = new TH2F("hjetncdqjvpt","number of particles in dark quark jet",500,0.,1000.,150,0.,150.);
+  TH2F *hjetncdqjvpt = new TH2F("hjetncdqjvpt","number of particles in dark quark jet versus jet pT",500,0.,1000.,150,0.,150.);
   TH1F *hjetncddqj = new TH1F("hjetncddqj","number of particles in jet that are dark pi or rho decendentss dark quark jet",150,0.,150.);
   TH1F *hjetppdqj = new TH1F("hjetppdqj"," number of particles in jet not dark pi or rho descendents dark quark jet",100,0.,100.);
   TH1F *hjetncdj = new TH1F("hjetncdj","number of particles in down quark jet",150,0.,150.);
-  TH2F *hjetncdjvpt = new TH2F("hjetncdjvpt","number of particles in down quark jet",500,0.,100.,150,0.,150.);
+  TH2F *hjetncdjvpt = new TH2F("hjetncdjvpt","number of particles in down quark jet versus jet pT",500,0.,1000.,150,0.,150.);
   TH1F *hjetncddj = new TH1F("hjetncddj","number of particles in jet that are dark pi or rho decendentss down quark jet",150,0.,150.);
   TH1F *hjetppdj = new TH1F("hjetppdj"," number of particles in jet not dark pi or rho descendents down quark jet",100,0.,100.);
+  TH2F *hdpvpt = new TH2F("hdpvpt","number of dark pions in jet versus jet pt jet well matched to dark quark",500,0.,1000.,50,0.,20.);
+  TH2F *hjetnccdqjvpt = new TH2F("hjetnccdqjvpt","number of charged particles in dark quark jet",500,0.,1000.,150,0.,150.);
+  TH2F *hjetnccdjvpt = new TH2F("hjetnccdjvpt","number of charged particles in down quark jet versus jet pT",500,0.,1000.,150,0.,150.);
+
+  TH2F *hdqchva = new TH2F("hdqchva","number of charged particles versus all particles in dark quark jet",150,0.,150.,150,0.,150.);
+  TH2F *hdchva = new TH2F("hdchva","number of charged particles versus all particlesin down quark jet",150,0.,150.,150,0.,150.);
+
 
 
   // initialize slowjet
@@ -429,10 +436,12 @@ int main(int argc, char* argv[]) {
     // set up counters for number of dark pions in each jet and number of jets with at least one dark pion
     vector<int> ndpiinjet(aSlowJet.sizeJet());
     vector<int> ninjet(aSlowJet.sizeJet());
+    vector<int> nchinjet(aSlowJet.sizeJet());
     vector<int> ndqdinjet(aSlowJet.sizeJet());
     for(int ii=0; ii<aSlowJet.sizeJet(); ii++) { 
       ndpiinjet[ii]=0;
       ninjet[ii]=0;
+      nchinjet[ii]=0;
       ndqdinjet[ii]=0;
     }
 
@@ -446,6 +455,7 @@ int main(int argc, char* argv[]) {
       ninjet[ijet]= consti.size();
       int idd=0;  // count number that came from a dark object
       for(int ji=0;ji<consti.size(); ++ji) {
+	if(pythia.event[consti[ji]].isCharged()) nchinjet[ijet]++;
 	bool innn=false;
 	for(int ki=0;ki<stbdq.size(); ++ki) {
 	  if(consti[ji]==stbdq[ki]) innn=true;
@@ -458,7 +468,7 @@ int main(int argc, char* argv[]) {
       hjetncncd->Fill(ninjet[ijet],ndqdinjet[ijet]);
       hjetpp->Fill(ninjet[ijet]-ndqdinjet[ijet]);
 
-      // find number of dark quarks in jet
+      // find number of dark pions in jet
       for(int ll=0;ll<ptdpis.size();++ll) {
         aaatmp=abs(pythia.event[ptdpis[ll]].phi()-aSlowJet.phi(ijet));
         if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
@@ -556,18 +566,35 @@ int main(int argc, char* argv[]) {
         hndpipjdq->Fill(ndpiinjet[ijet]);
         hptjetdpdq->Fill(aSlowJet.pT(ijet));
         hjetncdqj->Fill(ninjet[ijet]);
+        hdqchva->Fill(ninjet[ijet],nchinjet[ijet]);
         hjetncdqjvpt->Fill(aSlowJet.pT(ijet),ninjet[ijet]);
+        hjetnccdqjvpt->Fill(aSlowJet.pT(ijet),nchinjet[ijet]);
         hjetncddqj->Fill(ndqdinjet[ijet]);
         hjetppdqj->Fill(ninjet[ijet]-ndqdinjet[ijet]);
+	// if it matches well to the dark quark and contains at least one dark pions
+	Int_t dqsj;
+	if(ijet==dq1sj) {
+	  dqsj=dq1;
+	}  else {
+	  dqsj=dq2;
+	  }
+        aaatmp=abs(pythia.event[dqsj].phi()-aSlowJet.phi(ijet));
+        if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+        aaatmp=sqrt(pow(pythia.event[dqsj].y()-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+	if((aaatmp<0.4)&&(ndpiinjet[ijet]>0)) {
+	  hdpvpt->Fill(aSlowJet.pT(ijet),ndpiinjet[ijet]);
+	}
 
       }
 
       if( (ijet==d1sj) || (ijet==d2sj) ) {  // if matches down quark jets
         hndpipjd->Fill(ndpiinjet[ijet]);
         hjetncddj->Fill(ndqdinjet[ijet]);
+        hdchva->Fill(ninjet[ijet],nchinjet[ijet]);
         hjetppdj->Fill(ninjet[ijet]-ndqdinjet[ijet]);
         hjetncdj->Fill(ninjet[ijet]);
         hjetncdjvpt->Fill(aSlowJet.pT(ijet),ninjet[ijet]);
+        hjetnccdjvpt->Fill(aSlowJet.pT(ijet),nchinjet[ijet]);
       }
 
 
@@ -742,6 +769,9 @@ int main(int argc, char* argv[]) {
 
   hcutflow->Write();
 
+  hdpvpt->Write();
+  hdqchva->Write();
+  hdchva->Write();
 
   hjetnc->Write();
   hjetncd->Write();
@@ -750,11 +780,13 @@ int main(int argc, char* argv[]) {
 
   hjetncdqj->Write();
   hjetncdqjvpt->Write();
+  hjetnccdqjvpt->Write();
   hjetncddqj->Write();
   hjetppdqj->Write();
 
   hjetncdj->Write();
   hjetncdjvpt->Write();
+  hjetnccdjvpt->Write();
   hjetncddj->Write();
   hjetppdj->Write();
 
