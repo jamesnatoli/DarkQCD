@@ -10,7 +10,6 @@
 
 ! 1) Settings used in the main program.
 Main:numberOfEvents = 10000         	! number of events to generate
-Beams:eCM = 130000
 
 ! Detector geometry
 ParticleDecays:xyMax = 3000 		! in mm/c

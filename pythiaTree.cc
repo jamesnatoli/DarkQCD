@@ -4,7 +4,7 @@
 // Please respect the MCnet Guidelines, see GUIDELINES for details.
 
 // This is a simple test program.
-// It studies the chargd multiplicity distribution at the LHC.
+// It studies the charged multiplicity distribution at the LHC.
 // Modified by Rene Brun, Axel Naumann and Bernhard Meirose
 // to use ROOT for histogramming.
 
@@ -67,10 +67,8 @@ int main(int argc, char* argv[]) {
   TH1F *hstatus = new TH1F("hstatus","particle status HV",200,-100.,100.);
   TH1F *hstatus2 = new TH1F("hstatus2","particle status HV ndau<2",200,-100.,100.);
   TH1F *hndau = new TH1F("hndau","number daughters HV",100,0.,50.);
-  TH1F *hnsdau = new TH1F("hnsdau","number stable daughters HV (at least 1 stable)",100,0.,50.);
-  TH1F *hnsdauHV = new TH1F("hnsdauHV","number HV daughters HV (at least 1 stable daughter)",100,0.,50.);
-  TH1F *hnsdauCH = new TH1F("hnsdauCH","number charged stable daughters HV (at least 1 stable)",100,0.,50.);
-  TH2F *hnsdauvtotdau = new TH2F("hnsdauvtotdau","number stable daughters vs total daug HV (at least 1 stable)",100,0.,50.,100,0.,50.);
+  TH1F *hnsdau = new TH1F("hnsdau","number stable daughters HV",100,0.,50.);
+  TH1F *hd0HVs1 = new TH1F("hd0HVs1","impact parameter first stable daughter of HV",100,0.,1000.);
   TH2F *hndau2 = new TH2F("hndau2","number of daughters veruss parent ID-4900000",200,0.,200.,50,0.,50.);
   TH1F *hndpis = new TH1F("hndpis","number HV with a  stable daughter in event",100,0.,100.);
   TH1F *hnjet = new TH1F("hnjet"," number jets",50,0.,50.);
@@ -100,25 +98,6 @@ int main(int argc, char* argv[]) {
   TH2F *hdqvjet = new TH2F("hdqvjet"," pt of dark quark versus matched jet",500,0.,1000.,500,0.,1000.);
   TH1F *hdRdqdq71 = new TH1F("hdRdqdq71","delta R between dark quark and dark quark 71 ",100,0.,5.);
   TH2F *hpTdqdq71 = new TH2F("hpTdqdq71"," pt of dark quark versus dark quark 71",500,0.,1000.,500,0.,1000.);
-  TH1F *hjetnc = new TH1F("hjetnc","number of particles in jet",150,0.,150.);
-  TH1F *hjetncd = new TH1F("hjetncd","number of particles in jet that are dark pi or rho decendentss",100,0.,100.);
-  TH2F *hjetncncd = new TH2F("hjetncncd","number of particles in jet versus number that are dark pi or rho descendents",100,0.,100.,100,0.,100.);
-  TH1F *hjetpp = new TH1F("hjetpp"," number of particles in jet not dark pi or rho descendents",100,0.,100.);
-  TH1F *hjetncdqj = new TH1F("hjetncdqj","number of particles in dark quark jet",150,0.,150.);
-  TH2F *hjetncdqjvpt = new TH2F("hjetncdqjvpt","number of particles in dark quark jet versus jet pT",500,0.,1000.,150,0.,150.);
-  TH1F *hjetncddqj = new TH1F("hjetncddqj","number of particles in jet that are dark pi or rho decendentss dark quark jet",150,0.,150.);
-  TH1F *hjetppdqj = new TH1F("hjetppdqj"," number of particles in jet not dark pi or rho descendents dark quark jet",100,0.,100.);
-  TH1F *hjetncdj = new TH1F("hjetncdj","number of particles in down quark jet",150,0.,150.);
-  TH2F *hjetncdjvpt = new TH2F("hjetncdjvpt","number of particles in down quark jet versus jet pT",500,0.,1000.,150,0.,150.);
-  TH1F *hjetncddj = new TH1F("hjetncddj","number of particles in jet that are dark pi or rho decendentss down quark jet",150,0.,150.);
-  TH1F *hjetppdj = new TH1F("hjetppdj"," number of particles in jet not dark pi or rho descendents down quark jet",100,0.,100.);
-  TH2F *hdpvpt = new TH2F("hdpvpt","number of dark pions in jet versus jet pt jet well matched to dark quark",500,0.,1000.,50,0.,20.);
-  TH2F *hjetnccdqjvpt = new TH2F("hjetnccdqjvpt","number of charged particles in dark quark jet",500,0.,1000.,150,0.,150.);
-  TH2F *hjetnccdjvpt = new TH2F("hjetnccdjvpt","number of charged particles in down quark jet versus jet pT",500,0.,1000.,150,0.,150.);
-
-  TH2F *hdqchva = new TH2F("hdqchva","number of charged particles versus all particles in dark quark jet",150,0.,150.,150,0.,150.);
-  TH2F *hdchva = new TH2F("hdchva","number of charged particles versus all particlesin down quark jet",150,0.,150.,150,0.,150.);
-
 
 
   // initialize slowjet
@@ -133,9 +112,9 @@ int main(int argc, char* argv[]) {
   // Begin event loop. Generate event; skip if generation aborted.
 
 
-  Int_t ndqs,ndq71,ndqnm,m1,m2,ipid,dq1,dq2,d1,d2;
+  Int_t ndpis,ndqs,ndq71,ndqnm,m1,m2,ipid,dq1,dq2,d1,d2;
   Int_t dq711,dq712;
-  Int_t idbg=0;
+  Int_t idbg=1;
   Float_t dq1pT,dq1y,dq1phi;
   Float_t dq2pT,dq2y,dq2phi;
   Float_t d1pT,d1y,d1phi;
@@ -143,6 +122,8 @@ int main(int argc, char* argv[]) {
   Float_t dq1dR,dq2dR,d1dR,d2dR,aaatmp,aaatmp2;
   Int_t dq1sj,dq2sj,d1sj,d2sj;
 
+  Int_t ndpismax=100;
+  Int_t ptdpis[100];
 
 
   for (int iEvent = 0; iEvent < nEvent; ++iEvent) {
@@ -164,7 +145,7 @@ int main(int argc, char* argv[]) {
     nCharged = 0;  // for counting the number of stable charged particles in the event
     nNeutral = 0;  // ditto neutral
     nTot=0;
-    vector<int> ptdpis;
+    ndpis=0;  // number of dark pions with at least one stable daughter
     ndqs=0;  // number of dark quarks 
     ndq71=0; // number of dark quarks with 71 code
     ndqnm=0; // number of dark quarks with no dark quark mother
@@ -174,8 +155,6 @@ int main(int argc, char* argv[]) {
     d2=0;
     dq711=0;
     dq712=0;
-    //pointers to stable particles from dark quarks
-    vector<int> stbdq;;
 
 
     for (int i = 0; i < pythia.event.size(); ++i) {  // loop over all particles in the event
@@ -240,36 +219,43 @@ int main(int argc, char* argv[]) {
 	  if(pythia.event[i].daughter2()!=0) hppid2ddg->Fill(pythia.event[pythia.event[i].daughter2()].id()-4900000);
 	}
 	if(ndauHV>0) { // if it is not a stable HV particle
-	  // see if one is a hadron
+
+	  //          if( abs(idHV)==4900113) {  // dark rho
+	  //	    cout<<"danger danger will robinson dark rho number daughters is "<<ndauHV<<endl;
+	  //  	    for(int ij=0; ij<ndauHV; ++ij) {
+	  //	      Int_t iii = pythia.event[i].daughter1()+ij;
+	  //	      cout<<"daughter "<<ij<<" has id "<<pythia.event[iii].id()<<endl;
+	  //	      cout<<"mother momentum is "<<pythia.event[i].px()<<","<<pythia.event[i].py()<<","<<pythia.event[i].pz()<<endl;
+	  //	      cout<<"daught momentum is "<<pythia.event[iii].px()<<","<<pythia.event[iii].py()<<","<<pythia.event[iii].pz()<<endl;
+	  //	    }
+	  //          }
+
 	  Int_t nstable=0;
 	  for(int ij=0; ij<ndauHV; ++ij) {  // loop over all the HV particle's daughters
 	    Int_t iii = pythia.event[i].daughter1()+ij;
-	    if(pythia.event[iii].isHadron()) {  // for stable daughters of HV particles
-	      nstable++;
-	    }
+
+	    if(pythia.event[iii].isFinal()) {  // for stable daughters of HV particles
+	      Float_t d0dHV = sqrt(pow(pythia.event[iii].xProd(),2)+pow(pythia.event[iii].yProd(),2));
+
+	      if(nstable==0) { // if his a particle that is stable (first one)
+		hnsdau->Fill(pythia.event[i].daughter2()-pythia.event[i].daughter1());
+		hd0HVs1->Fill(d0dHV);
+		ndpis++;  // count HV particles that have at least one stable daughter
+		nstable++;
+		if(ndpis<ndpismax) ptdpis[ndpis-1]=i;
+ 	        hppid2HV->Fill(HV);
+	        hd0dHV->Fill(d0dHV);
+	        hd0d2HV->Fill(abs(HV),d0dHV);
+	      }
+
+	      if(idHV==4900021) {
+		std::cout<<" danger will r: dark gluon with stable child "<<pythia.event[pythia.event[i].daughter1()+ij].id()<<std::endl;
+		std::cout<<" daughters are "<<pythia.event[iii].daughter1()<<" "<<pythia.event[iii].daughter2()<<std::endl;
+	      }
+	    }	// end if final
 	  }  // end loop over HV daughters
-	  if(nstable>0) {
-	    ptdpis.push_back(i);
-	    Float_t d0dHV = sqrt(pow(pythia.event[pythia.event[i].daughter1()].xProd(),2)+pow(pythia.event[pythia.event[i].daughter1()].yProd(),2));
- 	    hppid2HV->Fill(HV);
-	    hd0dHV->Fill(d0dHV);
-	    hd0d2HV->Fill(abs(HV),d0dHV);
-            hnsdau->Fill(nstable);
-            Int_t nstableCH=0;
- 	    Int_t nHVdau=0;
-	    for(int ij=0; ij<ndauHV; ++ij) {  // loop over all the HV particle's daughters
- 	      Int_t iii = pythia.event[i].daughter1()+ij;
-	      if(abs(pythia.event[iii].id())>4900000) nHVdau++;
- 	      if(pythia.event[iii].isCharged()) nstableCH++;
-	    }
-            hnsdauCH->Fill(nstableCH);
-            hnsdauHV->Fill(nHVdau);
-	    hnsdauvtotdau->Fill(ndauHV,nstable);
-
-	  }  // end test that it has stable daughters
-
-	}  // end test that it has daughters
-      }  // end test that it is an HV particles
+	}
+      }
 
 
       if (pythia.event[i].isFinal() && pythia.event[i].isCharged()==0)  // count if stable and charged
@@ -278,49 +264,16 @@ int main(int argc, char* argv[]) {
       if (pythia.event[i].isFinal() && pythia.event[i].isCharged()!=0) // count if stable and neutral
         ++nNeutral;
 
-      // study stable particles
       if(pythia.event[i].isFinal()) {  // if stable
 	hppid->Fill( pythia.event[i].id() );  // get the type of the particle
 	nTot=nTot+1;  //count
-
-	//trace back and see if it came from a dark quark
-	if(idbg>9) cout<<"moms trace start for particle "<<i<<endl;
-        Int_t ipt = i;
-	vector<int> moms;
-        if(pythia.event[ipt].mother1()!=0) moms.push_back(pythia.event[ipt].mother1());
-	bool yuck = pythia.event[ipt].mother1()!=pythia.event[ipt].mother2();
-        if( (pythia.event[ipt].mother2()!=0)&&(yuck) ) moms.push_back(pythia.event[ipt].mother2());
-	bool isdqd=false;
-        while( (moms.size()>0) && (isdqd==false) ) {
-          ipt=moms[0];
-	  if(idbg>9) cout<<"    looking at mom "<<ipt<<" size of mom array is "<<moms.size()<<endl;
-	  if( (abs(pythia.event[ipt].id())==4900111)||(abs(pythia.event[ipt].id())==4900113)) { // dark pion or dark rho
-	    stbdq.push_back(i);
-	    isdqd=true;
-	    if(idbg>9) cout<<" ending it is dark"<<endl;
-	  } else {
-           if(pythia.event[ipt].mother1()!=0) moms.push_back(pythia.event[ipt].mother1());
-	  bool yuck = pythia.event[ipt].mother1()!=pythia.event[ipt].mother2();
-           if((pythia.event[ipt].mother2()!=0)&&(yuck)) moms.push_back(pythia.event[ipt].mother2());
-	   if(idbg>9) {
-	     cout<<"adding mothers "<<pythia.event[ipt].mother1()<<" "<<pythia.event[ipt].mother2()<<endl;
-	   }
-	  }
-          moms.erase(moms.begin());
-	  if(idbg>9) cout<<"check size after erase "<<moms.size()<<endl;
-        }
-
-
-
-      }  // end study stable particles
-
-
-
+	//	cout<<"   id px py pz e "<<pythia.event[i].id()<<" "<<pythia.event[i].px()<<" "<<pythia.event[i].py()<<" "<<pythia.event[i].pz()<<" "<<pythia.event[i].e()<<std::endl;
+      }
     }  // end particle list loop 
     // Fill charged multiplicity in histogram. End event loop.
     hmultch->Fill( nCharged );
     hmultneu->Fill( nNeutral );
-    hndpis->Fill( ptdpis.size() );
+    hndpis->Fill( ndpis );
     hndqs->Fill( ndqs );
     hndq71->Fill( ndq71 );
     hndqnm->Fill( ndqnm );
@@ -342,9 +295,9 @@ int main(int argc, char* argv[]) {
     if(idbg>0) {
       cout<<endl;
       cout<<" information about dark pions"<<endl;
-      cout<<" number of dark pions is "<<ptdpis.size()<<endl;
+      cout<<" number of dark pions is "<<ndpis<<endl;
       cout<<" id mother1 mother2 daughter 1 daughter2 pt y phi"<<endl;
-      for(int jj=0;jj<ptdpis.size();++jj) {
+      for(int jj=0;jj<ndpis;++jj) {
 	Int_t kk = ptdpis[jj];
 	 cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
 	  pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
@@ -434,47 +387,21 @@ int main(int argc, char* argv[]) {
     if(aSlowJet.sizeJet()>3)  hjet4pT->Fill(aSlowJet.pT(3));
 
     // set up counters for number of dark pions in each jet and number of jets with at least one dark pion
-    vector<int> ndpiinjet(aSlowJet.sizeJet());
-    vector<int> ninjet(aSlowJet.sizeJet());
-    vector<int> nchinjet(aSlowJet.sizeJet());
-    vector<int> ndqdinjet(aSlowJet.sizeJet());
-    for(int ii=0; ii<aSlowJet.sizeJet(); ii++) { 
-      ndpiinjet[ii]=0;
-      ninjet[ii]=0;
-      nchinjet[ii]=0;
-      ndqdinjet[ii]=0;
-    }
+    vector<int> ndqinjet(aSlowJet.sizeJet());
+    for(int ii=0; ii<aSlowJet.sizeJet(); ii++) { ndqinjet[ii]=0;}
 
     for (int ijet =0; ijet< aSlowJet.sizeJet(); ++ijet) {
       hjetpT->Fill(aSlowJet.pT(ijet));
       hjety->Fill(aSlowJet.y(ijet));
       hjetphi->Fill(aSlowJet.phi(ijet));
 
-      //get number of constituents in jet
-      vector<int> consti = aSlowJet.constituents(ijet);
-      ninjet[ijet]= consti.size();
-      int idd=0;  // count number that came from a dark object
-      for(int ji=0;ji<consti.size(); ++ji) {
-	if(pythia.event[consti[ji]].isCharged()) nchinjet[ijet]++;
-	bool innn=false;
-	for(int ki=0;ki<stbdq.size(); ++ki) {
-	  if(consti[ji]==stbdq[ki]) innn=true;
-	}
-	if(innn) {idd++;}
-      }
-      ndqdinjet[ijet]=idd;
-      hjetnc->Fill(ninjet[ijet]);
-      hjetncd->Fill(ndqdinjet[ijet]);
-      hjetncncd->Fill(ninjet[ijet],ndqdinjet[ijet]);
-      hjetpp->Fill(ninjet[ijet]-ndqdinjet[ijet]);
-
-      // find number of dark pions in jet
-      for(int ll=0;ll<ptdpis.size();++ll) {
+      // find number of dark quarks in jet
+      for(int ll=0;ll<ndpis;++ll) {
         aaatmp=abs(pythia.event[ptdpis[ll]].phi()-aSlowJet.phi(ijet));
         if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
         aaatmp=sqrt(pow(pythia.event[ptdpis[ll]].y()-aSlowJet.y(ijet),2)+pow(aaatmp,2));
 	if(aaatmp<0.4) {
-	  ndpiinjet[ijet]=ndpiinjet[ijet]+1;
+	  ndqinjet[ijet]=ndqinjet[ijet]+1;
 	}
       }
 
@@ -537,10 +464,9 @@ int main(int argc, char* argv[]) {
       hdqvjet->Fill(pythia.event[dq2].pT(),aSlowJet.pT(dq2sj));
       Float_t Del1 = (pythia.event[dq1].pT()-aSlowJet.pT(dq1sj))/aSlowJet.pT(dq1sj);
       Float_t Del2 = (pythia.event[dq2].pT()-aSlowJet.pT(dq2sj))/aSlowJet.pT(dq2sj);
-      if(idbg>0) {
       if( (Del1>0.5&&aSlowJet.pT(dq1sj)<60) || (Del2>0.5&&aSlowJet.pT(dq2sj)<60) ) {
 	cout<<"danger danger will robinson Del1 Del2 are "<<Del1<<" "<<Del2<<endl;
-      } }
+      }
     
       
 
@@ -552,61 +478,30 @@ int main(int argc, char* argv[]) {
     Int_t njetdpi=0;
     if(idbg>0) cout<<" information about dark pions per jet"<<endl;
     for (int ijet =0; ijet< aSlowJet.sizeJet(); ++ijet) {
-
-      if(ndpiinjet[ijet]>0) {  // count number of jets with at least 1 dark pions
-	njetdpi=njetdpi+1;
-      }
-
-      hndpipj->Fill(ndpiinjet[ijet]);
-      hptjetdp->Fill(aSlowJet.pT(ijet));
-      if( (ijet!=dq1sj)&& (ijet!=dq2sj) ) {  // if doesn't match dark quart jet
-        hndpipjndq->Fill(ndpiinjet[ijet]);
-        hptjetdpndq->Fill(aSlowJet.pT(ijet));
-      } else {  // if matches dark quark jets
-        hndpipjdq->Fill(ndpiinjet[ijet]);
-        hptjetdpdq->Fill(aSlowJet.pT(ijet));
-        hjetncdqj->Fill(ninjet[ijet]);
-        hdqchva->Fill(ninjet[ijet],nchinjet[ijet]);
-        hjetncdqjvpt->Fill(aSlowJet.pT(ijet),ninjet[ijet]);
-        hjetnccdqjvpt->Fill(aSlowJet.pT(ijet),nchinjet[ijet]);
-        hjetncddqj->Fill(ndqdinjet[ijet]);
-        hjetppdqj->Fill(ninjet[ijet]-ndqdinjet[ijet]);
-	// if it matches well to the dark quark and contains at least one dark pions
-	Int_t dqsj;
-	if(ijet==dq1sj) {
-	  dqsj=dq1;
-	}  else {
-	  dqsj=dq2;
-	  }
-        aaatmp=abs(pythia.event[dqsj].phi()-aSlowJet.phi(ijet));
-        if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-        aaatmp=sqrt(pow(pythia.event[dqsj].y()-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-	if((aaatmp<0.4)&&(ndpiinjet[ijet]>0)) {
-	  hdpvpt->Fill(aSlowJet.pT(ijet),ndpiinjet[ijet]);
+	if( (ijet==d1sj) || (ijet==d2sj) ) {
+	  hndpipjd->Fill(ndqinjet[ijet]);
 	}
-
+      if(ndqinjet[ijet]>0) {
+	njetdpi=njetdpi+1;
+	hndpipj->Fill(ndqinjet[ijet]);
+	hptjetdp->Fill(aSlowJet.pT(ijet));
+	if( (ijet!=dq1sj)&& (ijet!=dq2sj) ) {
+	  hndpipjndq->Fill(ndqinjet[ijet]);
+  	  hptjetdpndq->Fill(aSlowJet.pT(ijet));
+	} else {
+	  hndpipjdq->Fill(ndqinjet[ijet]);
+  	  hptjetdpdq->Fill(aSlowJet.pT(ijet));
+	}
       }
-
-      if( (ijet==d1sj) || (ijet==d2sj) ) {  // if matches down quark jets
-        hndpipjd->Fill(ndpiinjet[ijet]);
-        hjetncddj->Fill(ndqdinjet[ijet]);
-        hdchva->Fill(ninjet[ijet],nchinjet[ijet]);
-        hjetppdj->Fill(ninjet[ijet]-ndqdinjet[ijet]);
-        hjetncdj->Fill(ninjet[ijet]);
-        hjetncdjvpt->Fill(aSlowJet.pT(ijet),ninjet[ijet]);
-        hjetnccdjvpt->Fill(aSlowJet.pT(ijet),nchinjet[ijet]);
-      }
-
-
       if(idbg>0) {
-	cout<<ijet<<" "<<ndpiinjet[ijet]<<endl;
+	cout<<ijet<<" "<<ndqinjet[ijet]<<endl;
       }
     }
     hnjetdpi->Fill(njetdpi);
 
 
     // find delta R between dark pions and dark quarts
-    for (int ii =0; ii< ptdpis.size(); ++ii) {
+    for (int ii =0; ii< ndpis; ++ii) {
       Int_t ipt = ptdpis[ii];
       // find delta R to dq1
       aaatmp=abs(dq1phi-pythia.event[ipt].phi());
@@ -618,8 +513,7 @@ int main(int argc, char* argv[]) {
       aaatmp2=sqrt(pow(dq2y-pythia.event[ipt].y(),2)+pow(aaatmp2,2));
       //take minimum
       if(aaatmp2<aaatmp) aaatmp=aaatmp2;
-      if(idbg>0) {
-	if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;}
+      if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;
       hdRdpisdjet->Fill(aaatmp);
     }
 
@@ -766,30 +660,6 @@ int main(int argc, char* argv[]) {
 
 
   // Save histogram on file and close file.
-
-  hcutflow->Write();
-
-  hdpvpt->Write();
-  hdqchva->Write();
-  hdchva->Write();
-
-  hjetnc->Write();
-  hjetncd->Write();
-  hjetncncd->Write();
-  hjetpp->Write();
-
-  hjetncdqj->Write();
-  hjetncdqjvpt->Write();
-  hjetnccdqjvpt->Write();
-  hjetncddqj->Write();
-  hjetppdqj->Write();
-
-  hjetncdj->Write();
-  hjetncdjvpt->Write();
-  hjetnccdjvpt->Write();
-  hjetncddj->Write();
-  hjetppdj->Write();
-
   hdRdqdq71->Write();
   hpTdqdq71->Write();
   hdqvjet->Write();
@@ -803,6 +673,7 @@ int main(int argc, char* argv[]) {
   hptjetdpdq->Write();
   hdRdpisdjet->Write();
   htright->Write();
+  hcutflow->Write();
   hdRdqj->Write();
   hdRdj->Write();
   hppid2ddg->Write();
@@ -826,9 +697,7 @@ int main(int argc, char* argv[]) {
   hstatus2->Write();
   hndau->Write();
   hnsdau->Write();
-  hnsdauHV->Write();
-  hnsdauvtotdau->Write();
-  hnsdauCH->Write();
+  hd0HVs1->Write();
   hndau2->Write();
   hnjet->Write();
   hjetpT->Write();
@@ -838,18 +707,6 @@ int main(int argc, char* argv[]) {
   hjet4pT->Write();
   hjety->Write();
   hjetphi->Write();
-
-  // output acceptance
-  cout<<"acceptance results"<<endl;
-  cout<<hcutflow->GetBinContent(0)<<endl;
-  cout<<hcutflow->GetBinContent(1)<<endl;
-  cout<<hcutflow->GetBinContent(2)<<endl;
-  cout<<hcutflow->GetBinContent(3)<<endl;
-  cout<<hcutflow->GetBinContent(4)<<endl;
-  cout<<hcutflow->GetBinContent(5)<<endl;
-  cout<<hcutflow->GetBinContent(6)<<endl;
-
-
   delete outFile;
 
   // Done.
