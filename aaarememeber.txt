@@ -2,3 +2,11 @@
 
 to compile
 .x+ analyse.C
+
+
+
+CMSSW_7_1_14
+
+Configuration/GenProduction/python/EightTeV/SingleElectronFlatPt10To300_cfi.py
+
+cmsRun Junk_run.py
