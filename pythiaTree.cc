@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
 
   Int_t ndpis,ndqs,ndq71,ndqnm,m1,m2,ipid,dq1,dq2,d1,d2;
   Int_t dq711,dq712;
-  Int_t idbg=1;
+  Int_t idbg=0;
   Float_t dq1pT,dq1y,dq1phi;
   Float_t dq2pT,dq2y,dq2phi;
   Float_t d1pT,d1y,d1phi;
@@ -248,10 +248,10 @@ int main(int argc, char* argv[]) {
 	        hd0d2HV->Fill(abs(HV),d0dHV);
 	      }
 
-	      if(idHV==4900021) {
-		std::cout<<" danger will r: dark gluon with stable child "<<pythia.event[pythia.event[i].daughter1()+ij].id()<<std::endl;
-		std::cout<<" daughters are "<<pythia.event[iii].daughter1()<<" "<<pythia.event[iii].daughter2()<<std::endl;
-	      }
+	      //	      if(idHV==4900021) {
+	      //		std::cout<<" danger will r: dark gluon with stable child "<<pythia.event[pythia.event[i].daughter1()+ij].id()<<std::endl;
+	      //		std::cout<<" daughters are "<<pythia.event[iii].daughter1()<<" "<<pythia.event[iii].daughter2()<<std::endl;
+	      //	      }
 	    }	// end if final
 	  }  // end loop over HV daughters
 	}
@@ -464,9 +464,9 @@ int main(int argc, char* argv[]) {
       hdqvjet->Fill(pythia.event[dq2].pT(),aSlowJet.pT(dq2sj));
       Float_t Del1 = (pythia.event[dq1].pT()-aSlowJet.pT(dq1sj))/aSlowJet.pT(dq1sj);
       Float_t Del2 = (pythia.event[dq2].pT()-aSlowJet.pT(dq2sj))/aSlowJet.pT(dq2sj);
-      if( (Del1>0.5&&aSlowJet.pT(dq1sj)<60) || (Del2>0.5&&aSlowJet.pT(dq2sj)<60) ) {
-	cout<<"danger danger will robinson Del1 Del2 are "<<Del1<<" "<<Del2<<endl;
-      }
+      //      if( (Del1>0.5&&aSlowJet.pT(dq1sj)<60) || (Del2>0.5&&aSlowJet.pT(dq2sj)<60) ) {
+      //	cout<<"danger danger will robinson Del1 Del2 are "<<Del1<<" "<<Del2<<endl;
+      //      }
     
       
 
@@ -513,14 +513,14 @@ int main(int argc, char* argv[]) {
       aaatmp2=sqrt(pow(dq2y-pythia.event[ipt].y(),2)+pow(aaatmp2,2));
       //take minimum
       if(aaatmp2<aaatmp) aaatmp=aaatmp2;
-      if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;
+      //      if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;
       hdRdpisdjet->Fill(aaatmp);
     }
 
 
     // for each dark quark, output daughter tree until hit stable particle
     // dark quark 1
-    cout<<endl;
+    //    cout<<endl;
     if(idbg>0) cout<<"beginning dark quark 1 "<<dq1<<endl;
     Int_t ipt = dq1;
     //get number of daughters
@@ -561,7 +561,7 @@ int main(int argc, char* argv[]) {
     }
     
     // dark quark 2
-    cout<<endl;
+    //    cout<<endl;
     if(idbg>0) cout<<"beginning dark quark 2 "<<dq2<<endl;
     ipt = dq2;
     //get number of daughters
