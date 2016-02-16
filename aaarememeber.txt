@@ -5,8 +5,8 @@ to compile
 
 
 
-CMSSW_7_6_0_pre1
-CMSSW_7_1_14
+CMSSW_7_6_0_pre1  gen-sim-reco
+CMSSW_7_1_14  analyze
 
 
 Configuration/GenProduction/python/EightTeV/SingleElectronFlatPt10To300_cfi.py
@@ -14,7 +14,8 @@ Configuration/GenProduction/python/EightTeV/SingleElectronFlatPt10To300_cfi.py
 cmsRun Junk_run.py
 
 
-cmsDriver.py Configuration/GenProduction/python/EightTeV/SingleKshortFlatPt10to300_cfi.py --fileout file:Junk.root --mc --eventcontent RECOSIM --datatier GEN-SIM-RECO --conditions MCRUN2_71_V1::All --step GEN,SIM,DIGI,L1,DIGI2RAW,HLT:GRun,RAW2DIGI,L1Reco,RECO --python_filename Junk_run.py --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,Configuration/DataProcessing/Utils.addMonitoring --no_exec -n 2
+
+cmsDriver.py Configuration/GenProduction/python/EightTeV/SingleKshortFlatPt10To300_cfi.py --fileout file:Junk.root --mc --eventcontent RECOSIM --datatier GEN-SIM-RECO --conditions MCRUN2_71_V1::All --step GEN,SIM,DIGI,L1,DIGI2RAW,HLT:GRun,RAW2DIGI,L1Reco,RECO --python_filename Junk_cfg.py --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,Configuration/DataProcessing/Utils.addMonitoring --no_exec -n 10
 
 
 git cms-init
