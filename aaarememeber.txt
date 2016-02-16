@@ -4,9 +4,9 @@ to compile
 .x+ analyse.C
 
 
-
-CMSSW_7_6_0_pre1  gen-sim-reco
-CMSSW_7_1_14  analyze
+CMSSW_7_1_21 gen,sim
+CMSSW_7_6_1 digi,hlt,reco
+CMSSW_7_6_1  analyze
 
 
 Configuration/GenProduction/python/EightTeV/SingleElectronFlatPt10To300_cfi.py
@@ -15,7 +15,22 @@ cmsRun Junk_run.py
 
 
 
-cmsDriver.py Configuration/GenProduction/python/EightTeV/SingleKshortFlatPt10To300_cfi.py --fileout file:Junk.root --mc --eventcontent RECOSIM --datatier GEN-SIM-RECO --conditions MCRUN2_71_V1::All --step GEN,SIM,DIGI,L1,DIGI2RAW,HLT:GRun,RAW2DIGI,L1Reco,RECO --python_filename Junk_cfg.py --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,Configuration/DataProcessing/Utils.addMonitoring --no_exec -n 10
+
+7_1_21
+cmsDriver.py Configuration/GenProduction/python/EightTeV/SingleKshortFlatPt10To300_cfi.py --fileout file:GENSIM.root --mc --eventcontent RAWSIM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1 --datatier GEN-SIM --conditions MCRUN2_71_V1::All --beamspot Realistic50ns13TeVCollision --step GEN,SIM --python_filename GENSIM_cfg.py --magField 38T_PostLS1  --no_exec -n 10
+
+
+7_6_1
+cmsDriver.py step1 --filein "file:/data/users/eno/CMSSW_7_1_21/src/GENSIM.root" --fileout file:step1.root --mc --eventcontent RAWSIM  --datatier GEN-SIM-RAW --conditions 76X_mcRun2_asymptotic_v12 --step DIGI,L1,DIGI2RAW,HLT:@frozen25ns --era Run2_25ns -n 10
+
+
+and then do
+
+cmsDriver.py step2 --filein file:step1.root --fileout file:step2.root --mc --eventcontent RECOSIM --runUnscheduled --datatier GEN-SIM-RECO --conditions 76X_mcRun2_asymptotic_v12 --step RAW2DIGI,L1Reco,RECO,EI,DQM:DQMOfflinePOGMC --era Run2_25ns -n 10
+
+
+
+
 
 
 git cms-init
