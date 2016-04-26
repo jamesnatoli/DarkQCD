@@ -103,14 +103,17 @@ int main(int argc, char* argv[]) {
   TH2F *hpTdqdq71 = new TH2F("hpTdqdq71"," pt of dark quark versus dark quark 71",500,0.,1000.,500,0.,1000.);
   
   //My Added Histograms
-  TH1F *hpTdownquark1 = new TH1F("hpTdownquark1", "pT of down quark jets ", 50, 0., 1200.);
+  TH1F *hpTdownquark1 = new TH1F("hpTdownquark1", "pT of down quark jets ", 50, 0., 1500.);
   hpTdownquark1 -> SetLineColor(1);
   hpTdownquark1 -> SetLineWidth(2);
+
   TH1F *hpTdownquark2 = new TH1F("hpTdownquark2", "pT of down quark jets 2", 50, 0., 1200.);
   hpTdownquark2 -> SetLineColor(1);
-  TH1F *hpT_Dark_downquark1 = new TH1F("hpT_Dark_downquark1", "pT of DARK down quark jets", 50, 0., 1200.);
+
+  TH1F *hpT_Dark_downquark1 = new TH1F("hpT_Dark_downquark1", "pT of DARK down quark jets", 50, 0., 1500.);
   hpT_Dark_downquark1 -> SetLineColor(4);
   hpT_Dark_downquark1 -> SetLineWidth(2);
+
   TH1F *hpT_Dark_downquark2 = new TH1F("hpT_Dark_downquark2", "pT of DARK down quark jets 2", 50, 0., 1200.);
   hpT_Dark_downquark2 -> SetLineColor(4);
  
@@ -825,16 +828,20 @@ int main(int argc, char* argv[]) {
   //My Added Histograms
   TH1F *combined_pT = (TH1F*)hpTdownquark1->Clone();
   combined_pT -> SetName("Combined pT");
-
+  combined_pT -> SetFillColor(1);
+  
   hpTdownquark1 -> Draw("c");
   hpTdownquark1 -> Write();
 
   hpT_Dark_downquark1 -> Write();
-  combined_pT-> Draw("C");
-  hpT_Dark_downquark1 -> Draw("C SAME");
+  hpT_Dark_downquark1 -> SetFillColor(4);
+  combined_pT-> Draw("");
+  hpT_Dark_downquark1 -> Draw("SAME");
   
   combined_pT -> Write();
   c1 -> Write();
+  c1 -> SaveAs("MonaLisa.gif");
+
   delete outFile;
   
   // Done.
