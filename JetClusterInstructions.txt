@@ -1,0 +1,27 @@
+loop over all particle pairs?
+     - method to identify pairs?
+     - maybe j = i + 1
+{
+	calculate Dij = min( pow ( pythia.event[i].pT, -2 ) , pow (pythia.event[j].pT, -2 ) );
+	multiply by difference in azimuthal angles square and difference in the pseudorapidities squared
+	... * ( ([i].phi()-[j].phi())^2 + ([i].eta()-[j].eta())^2)
+	divide by R squared which is set before, usually to = 0.4
+
+
+for every individual particle...
+
+    calculate Dib = [i].pT()^-2
+    min( Dij, Dib)
+    if ( min == Dij)
+    {
+	add 4 momenta... [i].px() + [j].px() and so on and create new particle
+	remove [i] and [j] from the list and add new particle to end???
+    }
+    else if ( min == Dib )
+    {
+	call it a jet???
+	remove [i] from particle list and add to jet list ( where and what is jet list)
+	stop when no more particles
+	
+		  - the min function finds the smaller of the 2 values
+		  - you are basically figuring out which particle has a smaller transverse momentum
