@@ -26,6 +26,9 @@
 // ROOT, for saving file.
 #include "TFile.h"
 
+//TCanvas for drawing Histograms
+#include <TCanvas.h>
+
 using namespace Pythia8;
 
 int nCharged, nNeutral, nTot;
@@ -98,7 +101,25 @@ int main(int argc, char* argv[]) {
   TH2F *hdqvjet = new TH2F("hdqvjet"," pt of dark quark versus matched jet",500,0.,1000.,500,0.,1000.);
   TH1F *hdRdqdq71 = new TH1F("hdRdqdq71","delta R between dark quark and dark quark 71 ",100,0.,5.);
   TH2F *hpTdqdq71 = new TH2F("hpTdqdq71"," pt of dark quark versus dark quark 71",500,0.,1000.,500,0.,1000.);
-
+  
+  //My Added Histograms
+  TH1F *hpTdownquark1 = new TH1F("hpTdownquark1", "pT of down quark jets ", 50, 0., 1200.);
+  hpTdownquark1 -> SetLineColor(1);
+  hpTdownquark1 -> SetLineWidth(2);
+  TH1F *hpTdownquark2 = new TH1F("hpTdownquark2", "pT of down quark jets 2", 50, 0., 1200.);
+  hpTdownquark2 -> SetLineColor(1);
+  TH1F *hpT_Dark_downquark1 = new TH1F("hpT_Dark_downquark1", "pT of DARK down quark jets", 50, 0., 1200.);
+  hpT_Dark_downquark1 -> SetLineColor(4);
+  hpT_Dark_downquark1 -> SetLineWidth(2);
+  TH1F *hpT_Dark_downquark2 = new TH1F("hpT_Dark_downquark2", "pT of DARK down quark jets 2", 50, 0., 1200.);
+  hpT_Dark_downquark2 -> SetLineColor(4);
+ 
+  //Create Canvas for drawing histograms
+  TCanvas *c1 = new TCanvas("c1", "demo", 200, 10, 900, 500);
+  c1 -> SetFillColor(42);
+  
+  //TCanvas *c2 = new TCanvas("c2", "demo", 200, 10, 900, 500);
+  //c2 -> SetFillColor(42);
 
   // initialize slowjet
   SlowJet aSlowJet(-1,0.4,35.,2.5,2,1); // power, R, ptjetmin, etamax, which particle, mass
@@ -125,341 +146,398 @@ int main(int argc, char* argv[]) {
   Int_t ndpismax=100;
   Int_t ptdpis[100];
 
-
-  for (int iEvent = 0; iEvent < nEvent; ++iEvent) {
-    if (!pythia.next()) continue;
-
-    if(idbg>0) {
-      std::cout<<endl;
-      std::cout<<endl;
-      std::cout<<endl;
-      std::cout<<"***********************************************************"<<endl;
-      std::cout<<"Will Robinson New Event "<<iEvent<<std::endl;
-    }
-
-    // do jet finding for this event
-    aSlowJet.analyze(pythia.event );
-    trigSlowJet.analyze(pythia.event );
-
-    // Find number of all final charged particles.
-    nCharged = 0;  // for counting the number of stable charged particles in the event
-    nNeutral = 0;  // ditto neutral
-    nTot=0;
-    ndpis=0;  // number of dark pions with at least one stable daughter
-    ndqs=0;  // number of dark quarks 
-    ndq71=0; // number of dark quarks with 71 code
-    ndqnm=0; // number of dark quarks with no dark quark mother
-    dq1=0;
-    dq2=0;
-    d1=0;
-    d2=0;
-    dq711=0;
-    dq712=0;
-
-
-    for (int i = 0; i < pythia.event.size(); ++i) {  // loop over all particles in the event
-      //      std::cout<<pythia.event[i].isCharged()<<endl;
-
-      //  look at dark quarks
-      if(abs(pythia.event[i].id())==4900101) {
-	ndqs++;  // count number of dark quarks in event
-	// look for dark quarks that do not have a dark quark daughter
-        m1=pythia.event[i].mother1();
-	m2=pythia.event[i].mother2();
-	if( (abs(pythia.event[m1].id())!=4900101) && (abs(pythia.event[m2].id())!=4900101) ) {
-	  ndqnm++;
-	  if(dq1==0) {
-	    dq1=i;
-	    if(abs(pythia.event[pythia.event[m1].daughter1()].id())==1) {
-	      d1=pythia.event[m1].daughter1();
-	    } else{
-	      d1=pythia.event[m1].daughter2();
-	    }
-	  } else {
-	    dq2=i;
-	    if(abs(pythia.event[pythia.event[m1].daughter1()].id())==1) {
-	      d2=pythia.event[m1].daughter1();
-	    } else{
-	      d2=pythia.event[m1].daughter2();
-	    }
-	  }
-	}
-	// look for dark quarks with code 71
-	if(abs(pythia.event[i].status())==71) {
-	  ndq71++;
-	  if(idbg>0) cout<<" dark quark with code 71 is "<<i<<" "<<pythia.event[i].pT()<<" "<<pythia.event[i].y()<<" "<<pythia.event[i].phi()<<endl;
-	  if(dq711==0) {
-	    dq711=i;
-	  } else {
-	    dq712=i;
-	  }
-	}
-      }
-      // look at all HV particles
-      if(abs(pythia.event[i].id())>4900000) {
-	int idHV = pythia.event[i].id();
-	Float_t mHV = pythia.event[i].m();
-	Float_t qHV = pythia.event[i].charge();
-        Float_t d0HV = sqrt(pow(pythia.event[i].xProd(),2)+pow(pythia.event[i].yProd(),2));
-	Int_t ndauHV = pythia.event[i].daughter2()-pythia.event[i].daughter1()+1;
-	Int_t HV = (idHV/abs(idHV))*(abs(idHV)-4900000);
-	hppidHV->Fill( HV);  // get the type of the particle
-        hmassHV->Fill( HV,mHV );
-        hqHV->Fill( HV,qHV );
-	hmHV->Fill(mHV);
-	hm2HV->Fill(mHV);
-	hd0HV->Fill(d0HV);
-	hstatus->Fill(pythia.event[i].status());
-	if(ndauHV<2) hstatus2->Fill(pythia.event[i].status());
-        hndau->Fill(ndauHV);
-        hndau2->Fill(abs(HV),ndauHV);
-	//what are the dark gluon daughters?
-	if(HV==21) {
-	  if(pythia.event[i].daughter1()!=0) hppid2ddg->Fill(pythia.event[pythia.event[i].daughter1()].id()-4900000);
-	  if(pythia.event[i].daughter2()!=0) hppid2ddg->Fill(pythia.event[pythia.event[i].daughter2()].id()-4900000);
-	}
-	if(ndauHV>0) { // if it is not a stable HV particle
-
-	  //          if( abs(idHV)==4900113) {  // dark rho
-	  //	    cout<<"danger danger will robinson dark rho number daughters is "<<ndauHV<<endl;
-	  //  	    for(int ij=0; ij<ndauHV; ++ij) {
-	  //	      Int_t iii = pythia.event[i].daughter1()+ij;
-	  //	      cout<<"daughter "<<ij<<" has id "<<pythia.event[iii].id()<<endl;
-	  //	      cout<<"mother momentum is "<<pythia.event[i].px()<<","<<pythia.event[i].py()<<","<<pythia.event[i].pz()<<endl;
-	  //	      cout<<"daught momentum is "<<pythia.event[iii].px()<<","<<pythia.event[iii].py()<<","<<pythia.event[iii].pz()<<endl;
-	  //	    }
-	  //          }
-
-	  Int_t nstable=0;
-	  for(int ij=0; ij<ndauHV; ++ij) {  // loop over all the HV particle's daughters
-	    Int_t iii = pythia.event[i].daughter1()+ij;
-
-	    if(pythia.event[iii].isFinal()) {  // for stable daughters of HV particles
-	      Float_t d0dHV = sqrt(pow(pythia.event[iii].xProd(),2)+pow(pythia.event[iii].yProd(),2));
-
-	      if(nstable==0) { // if his a particle that is stable (first one)
-		hnsdau->Fill(pythia.event[i].daughter2()-pythia.event[i].daughter1());
-		hd0HVs1->Fill(d0dHV);
-		ndpis++;  // count HV particles that have at least one stable daughter
-		nstable++;
-		if(ndpis<ndpismax) ptdpis[ndpis-1]=i;
- 	        hppid2HV->Fill(HV);
-	        hd0dHV->Fill(d0dHV);
-	        hd0d2HV->Fill(abs(HV),d0dHV);
-	      }
-
-	      //	      if(idHV==4900021) {
-	      //		std::cout<<" danger will r: dark gluon with stable child "<<pythia.event[pythia.event[i].daughter1()+ij].id()<<std::endl;
-	      //		std::cout<<" daughters are "<<pythia.event[iii].daughter1()<<" "<<pythia.event[iii].daughter2()<<std::endl;
-	      //	      }
-	    }	// end if final
-	  }  // end loop over HV daughters
-	}
-      }
-
-
-      if (pythia.event[i].isFinal() && pythia.event[i].isCharged()==0)  // count if stable and charged
-        ++nCharged;
-
-      if (pythia.event[i].isFinal() && pythia.event[i].isCharged()!=0) // count if stable and neutral
-        ++nNeutral;
-
-      if(pythia.event[i].isFinal()) {  // if stable
-	hppid->Fill( pythia.event[i].id() );  // get the type of the particle
-	nTot=nTot+1;  //count
-	//	cout<<"   id px py pz e "<<pythia.event[i].id()<<" "<<pythia.event[i].px()<<" "<<pythia.event[i].py()<<" "<<pythia.event[i].pz()<<" "<<pythia.event[i].e()<<std::endl;
-      }
-    }  // end particle list loop 
-    // Fill charged multiplicity in histogram. End event loop.
-    hmultch->Fill( nCharged );
-    hmultneu->Fill( nNeutral );
-    hndpis->Fill( ndpis );
-    hndqs->Fill( ndqs );
-    hndq71->Fill( ndq71 );
-    hndqnm->Fill( ndqnm );
-
-
-
-    if(idbg>0) {
-      cout<<"will robinson"<<endl;
-      cout<<"number dark quarks without dark quark mothers is "<<ndqnm<<endl;
-      cout<<" pointers to dark quarks are "<<dq1<<" "<<dq2<<endl;
-      cout<<" pt y phi are "<<pythia.event[dq1].pT()<<" "<<pythia.event[dq1].y()<<" "<<pythia.event[dq1].phi()<<endl;
-      cout<<" pt y phi are "<<pythia.event[dq2].pT()<<" "<<pythia.event[dq2].y()<<" "<<pythia.event[dq2].phi()<<endl;
-      cout<<" pointers to d quarks are "<<d1<<" "<<d2<<endl;
-      cout<<" pt y phi are "<<pythia.event[d1].pT()<<" "<<pythia.event[d1].y()<<" "<<pythia.event[d1].phi()<<endl;
-      cout<<" pt y phi are "<<pythia.event[d2].pT()<<" "<<pythia.event[d2].y()<<" "<<pythia.event[d2].phi()<<endl;
-      cout<<endl;
-      cout<<" number dark quarks code 71 is "<<ndq71<<endl;
-    }
-    if(idbg>0) {
-      cout<<endl;
-      cout<<" information about dark pions"<<endl;
-      cout<<" number of dark pions is "<<ndpis<<endl;
-      cout<<" id mother1 mother2 daughter 1 daughter2 pt y phi"<<endl;
-      for(int jj=0;jj<ndpis;++jj) {
-	Int_t kk = ptdpis[jj];
-	 cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
-	  pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
-        pythia.event[kk].pT()<<" "<<pythia.event[kk].y()<<" "<<pythia.event[kk].phi()<<" "<<endl;
-
-      }
-    }
-
-
-    // compare code 71 dark quarks to initial dark quarks
-    Float_t a1=abs(pythia.event[dq1].phi()-pythia.event[dq711].phi());
-    if(a1>3.14159) a1=6.2832-a1;
-    a1=sqrt(pow(pythia.event[dq1].y()-pythia.event[dq711].y(),2)+pow(a1,2));
-    Float_t b1=abs(pythia.event[dq1].phi()-pythia.event[dq712].phi());
-    if(b1>3.14159) b1=6.2832-b1;
-    b1=sqrt(pow(pythia.event[dq1].y()-pythia.event[dq712].y(),2)+pow(b1,2));
-    if(a1<b1) {
-      hdRdqdq71->Fill(a1);
-      hpTdqdq71->Fill(pythia.event[dq1].pT(),pythia.event[dq711].pT());
-    } else {
-      hdRdqdq71->Fill(b1);
-      hpTdqdq71->Fill(pythia.event[dq1].pT(),pythia.event[dq712].pT());
-    }
-
-
-    a1=abs(pythia.event[dq2].phi()-pythia.event[dq711].phi());
-    if(a1>3.14159) a1=6.2832-a1;
-    a1=sqrt(pow(pythia.event[dq2].y()-pythia.event[dq711].y(),2)+pow(a1,2));
-    b1=abs(pythia.event[dq2].phi()-pythia.event[dq712].phi());
-    if(b1>3.14159) b1=6.2832-b1;
-    b1=sqrt(pow(pythia.event[dq2].y()-pythia.event[dq712].y(),2)+pow(b1,2));
-    if(a1<b1) {
-      hdRdqdq71->Fill(a1);
-      hpTdqdq71->Fill(pythia.event[dq2].pT(),pythia.event[dq711].pT());
-    } else {
-      hdRdqdq71->Fill(b1);
-      hpTdqdq71->Fill(pythia.event[dq2].pT(),pythia.event[dq712].pT());
-    }
-
-
-    // change to code 71 dark quarks
-    //    dq1=dq711;
-    //    dq2=dq712;
-
-
-    //get kinematic variables for initial dark quarks and d quarks
-
-    dq1pT=pythia.event[dq1].pT();
-    dq1y=pythia.event[dq1].y();
-    dq1phi=pythia.event[dq1].phi();
-    dq2pT=pythia.event[dq2].pT();
-    dq2y=pythia.event[dq2].y();
-    dq2phi=pythia.event[dq2].phi();
-    d1pT=pythia.event[d1].pT();
-    d1y=pythia.event[d1].y();
-    d1phi=pythia.event[d1].phi();
-    d2pT=pythia.event[d2].pT();
-    d2y=pythia.event[d2].y();
-    d2phi=pythia.event[d2].phi();
-
-    // delta r between dark quark and d quark
-    //    Float_t bbb=99999.;
-    // aaatmp=abs(dq1phi-aSlowJet.phi(ijet));
-    //  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-    //  aaatmp=sqrt(pow(dq1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-    //  if(aaatmp<dq1dR) {
-    //	dq1dR=aaatmp;
-    //	dq1sj=ijet;
-    // }
-    
+  for (int iEvent = 0; iEvent < nEvent; ++iEvent) 
+    {
+      if (!pythia.next()) 
+	continue;
       
-
-
-    // variables to do matching to slow jets
-    dq1dR=99999.;
-    dq2dR=99999.;
-    d1dR=99999.;
-    d2dR=99999.;
-
-
-    // analyze jets
-    hnjet->Fill( aSlowJet.sizeJet() );
-    if(idbg>0) aSlowJet.list();
-    if(aSlowJet.sizeJet()>0)  hjet1pT->Fill(aSlowJet.pT(0));
-    if(aSlowJet.sizeJet()>1)  hjet2pT->Fill(aSlowJet.pT(1));
-    if(aSlowJet.sizeJet()>2)  hjet3pT->Fill(aSlowJet.pT(2));
-    if(aSlowJet.sizeJet()>3)  hjet4pT->Fill(aSlowJet.pT(3));
-
-    // set up counters for number of dark pions in each jet and number of jets with at least one dark pion
-    vector<int> ndqinjet(aSlowJet.sizeJet());
-    for(int ii=0; ii<aSlowJet.sizeJet(); ii++) { ndqinjet[ii]=0;}
-
-    for (int ijet =0; ijet< aSlowJet.sizeJet(); ++ijet) {
-      hjetpT->Fill(aSlowJet.pT(ijet));
-      hjety->Fill(aSlowJet.y(ijet));
-      hjetphi->Fill(aSlowJet.phi(ijet));
-
-      // find number of dark quarks in jet
-      for(int ll=0;ll<ndpis;++ll) {
-        aaatmp=abs(pythia.event[ptdpis[ll]].phi()-aSlowJet.phi(ijet));
-        if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-        aaatmp=sqrt(pow(pythia.event[ptdpis[ll]].y()-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-	if(aaatmp<0.4) {
-	  ndqinjet[ijet]=ndqinjet[ijet]+1;
+      if(idbg>0) 
+	{
+	  std::cout<<endl;
+	  std::cout<<endl;
+	  std::cout<<endl;
+	  std::cout<<"***********************************************************"<<endl;
+	  std::cout<<"Will Robinson New Event "<<iEvent<<std::endl;
 	}
-      }
+      
+      // do jet finding for this event
+      aSlowJet.analyze(pythia.event );
+      trigSlowJet.analyze(pythia.event );
+      
+      // Find number of all final charged particles.
+      nCharged = 0;  // for counting the number of stable charged particles in the event
+      nNeutral = 0;  // ditto neutral
+      nTot=0;
+      ndpis=0;  // number of dark pions with at least one stable daughter
+      ndqs=0;  // number of dark quarks 
+      ndq71=0; // number of dark quarks with 71 code
+      ndqnm=0; // number of dark quarks with no dark quark mother
+      dq1=0;
+      dq2=0;
+      d1=0;
+      d2=0;
+      dq711=0;
+      dq712=0;
+      
+      
+      for (int i = 0; i < pythia.event.size(); ++i) 
+	{  // loop over all particles in the event
+	  //      std::cout<<pythia.event[i].isCharged()<<endl;
+	  
+	  //  look at dark quarks
+	  if(abs(pythia.event[i].id())==4900101) 
+	    {
+	      ndqs++;  // count number of dark quarks in event
+	      // look for dark quarks that do not have a dark quark daughter
+	      m1=pythia.event[i].mother1();
+	      m2=pythia.event[i].mother2();
+	      if( (abs(pythia.event[m1].id())!=4900101) && (abs(pythia.event[m2].id())!=4900101) ) 
+		{
+		  ndqnm++;
+		  if(dq1==0) 
+		    {
+		      dq1=i;
+		      if(abs(pythia.event[pythia.event[m1].daughter1()].id())==1) 
+			{
+			  d1=pythia.event[m1].daughter1();
+			} 
+		      else
+			{
+			  d1=pythia.event[m1].daughter2();
+			}
+		    } 
+		  else 
+		    {
+		      dq2=i;
+		      if(abs(pythia.event[pythia.event[m1].daughter1()].id())==1) 
+			{
+			  d2=pythia.event[m1].daughter1();
+			} 
+		      else
+			{
+			  d2=pythia.event[m1].daughter2();
+			}
+		    }
+		}
+	      // look for dark quarks with code 71
+	      if(abs(pythia.event[i].status())==71) {
+		ndq71++;
+		if(idbg>0) cout<<" dark quark with code 71 is "<<i<<" "<<pythia.event[i].pT()<<" "<<pythia.event[i].y()<<" "<<pythia.event[i].phi()<<endl;
+		if(dq711==0) 
+		  {
+		    dq711=i;
+		  } 
+		else 
+		  {
+		    dq712=i;
+		  }
+	      }
+	    }
+	  // look at all HV particles
+	  if(abs(pythia.event[i].id())>4900000) 
+	    {
+	      int idHV = pythia.event[i].id();
+	      Float_t mHV = pythia.event[i].m();
+	      Float_t qHV = pythia.event[i].charge();
+	      Float_t d0HV = sqrt(pow(pythia.event[i].xProd(),2)+pow(pythia.event[i].yProd(),2));
+	      Int_t ndauHV = pythia.event[i].daughter2()-pythia.event[i].daughter1()+1;
+	      Int_t HV = (idHV/abs(idHV))*(abs(idHV)-4900000);
+	      hppidHV->Fill( HV);  // get the type of the particle
+	      hmassHV->Fill( HV,mHV );
+	      hqHV->Fill( HV,qHV );
+	      hmHV->Fill(mHV);
+	      hm2HV->Fill(mHV);
+	      hd0HV->Fill(d0HV);
+	      hstatus->Fill(pythia.event[i].status());
+	      if(ndauHV<2) hstatus2->Fill(pythia.event[i].status());
+	      hndau->Fill(ndauHV);
+	      hndau2->Fill(abs(HV),ndauHV);
+	      //what are the dark gluon daughters?
+	      if(HV==21) 
+		{
+		  if(pythia.event[i].daughter1()!=0) hppid2ddg->Fill(pythia.event[pythia.event[i].daughter1()].id()-4900000);
+		  if(pythia.event[i].daughter2()!=0) hppid2ddg->Fill(pythia.event[pythia.event[i].daughter2()].id()-4900000);
+		}
+	      if(ndauHV>0) 
+		{ // if it is not a stable HV particle
+		  
+		  //          if( abs(idHV)==4900113) {  // dark rho
+		  //	    cout<<"danger danger will robinson dark rho number daughters is "<<ndauHV<<endl;
+		  //  	    for(int ij=0; ij<ndauHV; ++ij) {
+		  //	      Int_t iii = pythia.event[i].daughter1()+ij;
+		  //	      cout<<"daughter "<<ij<<" has id "<<pythia.event[iii].id()<<endl;
+		  //	      cout<<"mother momentum is "<<pythia.event[i].px()<<","<<pythia.event[i].py()<<","<<pythia.event[i].pz()<<endl;
+		  //	      cout<<"daught momentum is "<<pythia.event[iii].px()<<","<<pythia.event[iii].py()<<","<<pythia.event[iii].pz()<<endl;
+		  //	    }
+		  //          }
 
-
-
-      // find delta R to dq1
-      aaatmp=abs(dq1phi-aSlowJet.phi(ijet));
-      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-      aaatmp=sqrt(pow(dq1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-      if(aaatmp<dq1dR) {
-	dq1dR=aaatmp;
-	dq1sj=ijet;
-      }
-
-      // find delta R to dq2
-      aaatmp=abs(dq2phi-aSlowJet.phi(ijet));
-      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-      aaatmp=sqrt(pow(dq2y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-      if(aaatmp<dq2dR) {
-	dq2dR=aaatmp;
-	dq2sj=ijet;
-      }
-      // find delta R to d1
-      aaatmp=abs(d1phi-aSlowJet.phi(ijet));
-      //      cout<<d1phi<<" "<<aSlowJet.phi(ijet)<<" "<<aaatmp<<endl;
-      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-      //      cout<<d1y<<" "<<aSlowJet.y(ijet)<<endl;
-      aaatmp=sqrt(pow(d1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-      //      cout<<" ijet "<<ijet<<" aaatmp "<<aaatmp<<" d1dR "<<d1dR<<endl;
-      if(aaatmp<d1dR) {
-	d1dR=aaatmp;
-	d1sj=ijet;
-      }
-      // find delta R to d2
-      aaatmp=abs(d2phi-aSlowJet.phi(ijet));
-      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-      aaatmp=sqrt(pow(d2y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-      if(aaatmp<d2dR) {
-	d2dR=aaatmp;
-	d2sj=ijet;
-      }
-
-    }  // end loop over slow jets
-
-
-    if(idbg>0) {
-      cout<<" slow jet matching to dq1 is "<<dq1sj<<endl;
-      cout<<" slow jet matching to dq2 is "<<dq2sj<<endl;
-      cout<<" slow jet matching to d1 is "<<d1sj<<endl;
-      cout<<" slow jet matching to d2 is "<<d2sj<<endl;
-    }
+		  Int_t nstable=0;
+		  for(int ij=0; ij<ndauHV; ++ij) 
+		    {  // loop over all the HV particle's daughters
+		      Int_t iii = pythia.event[i].daughter1()+ij;
+		      
+		      if(pythia.event[iii].isFinal()) 
+			{  // for stable daughters of HV particles
+			  Float_t d0dHV = sqrt(pow(pythia.event[iii].xProd(),2)+pow(pythia.event[iii].yProd(),2));
+			  
+			  if(nstable==0) 
+			    { // if his a particle that is stable (first one)
+			      hnsdau->Fill(pythia.event[i].daughter2()-pythia.event[i].daughter1());
+			      hd0HVs1->Fill(d0dHV);
+			      ndpis++;  // count HV particles that have at least one stable daughter
+			      nstable++;
+			      if(ndpis<ndpismax) ptdpis[ndpis-1]=i;
+			      hppid2HV->Fill(HV);
+			      hd0dHV->Fill(d0dHV);
+			      hd0d2HV->Fill(abs(HV),d0dHV);
+			    }
+			  
+			  //	      if(idHV==4900021) {
+			  //		std::cout<<" danger will r: dark gluon with stable child "<<pythia.event[pythia.event[i].daughter1()+ij].id()<<std::endl;
+			  //		std::cout<<" daughters are "<<pythia.event[iii].daughter1()<<" "<<pythia.event[iii].daughter2()<<std::endl;
+			  //	      }
+			}	// end if final
+		    }  // end loop over HV daughters
+		}
+	    }
+	  
+	  
+	  if (pythia.event[i].isFinal() && pythia.event[i].isCharged()==0)  // count if stable and charged
+	    ++nCharged;
+	  
+	  if (pythia.event[i].isFinal() && pythia.event[i].isCharged()!=0) // count if stable and neutral
+	    ++nNeutral;
+	  
+	  if(pythia.event[i].isFinal()) 
+	    {  // if stable
+	      hppid->Fill( pythia.event[i].id() );  // get the type of the particle
+	      nTot=nTot+1;  //count
+	      //	cout<<"   id px py pz e "<<pythia.event[i].id()<<" "<<pythia.event[i].px()<<" "<<pythia.event[i].py()<<" "<<pythia.event[i].pz()<<" "<<pythia.event[i].e()<<std::endl;
+	    }
+	}  // end particle list loop 
+      // Fill charged multiplicity in histogram. End event loop.
+      hmultch->Fill( nCharged );
+      hmultneu->Fill( nNeutral );
+      hndpis->Fill( ndpis );
+      hndqs->Fill( ndqs );
+      hndq71->Fill( ndq71 );
+      hndqnm->Fill( ndqnm );
+      
+      
+      
+      if(idbg>0) 
+	{
+	  cout<<"will robinson"<<endl;
+	  cout<<"number dark quarks without dark quark mothers is "<<ndqnm<<endl;
+	  cout<<" pointers to dark quarks are "<<dq1<<" "<<dq2<<endl;
+	  cout<<" pt y phi are "<<pythia.event[dq1].pT()<<" "<<pythia.event[dq1].y()<<" "<<pythia.event[dq1].phi()<<endl;
+	  cout<<" pt y phi are "<<pythia.event[dq2].pT()<<" "<<pythia.event[dq2].y()<<" "<<pythia.event[dq2].phi()<<endl;
+	  cout<<" pointers to d quarks are "<<d1<<" "<<d2<<endl;
+	  cout<<" pt y phi are "<<pythia.event[d1].pT()<<" "<<pythia.event[d1].y()<<" "<<pythia.event[d1].phi()<<endl;
+	  cout<<" pt y phi are "<<pythia.event[d2].pT()<<" "<<pythia.event[d2].y()<<" "<<pythia.event[d2].phi()<<endl;
+	  cout<<endl;
+	  cout<<" number dark quarks code 71 is "<<ndq71<<endl;
+	}
+      if(idbg>0) 
+	{
+	  cout<<endl;
+	  cout<<" information about dark pions"<<endl;
+	  cout<<" number of dark pions is "<<ndpis<<endl;
+	  cout<<" id mother1 mother2 daughter 1 daughter2 pt y phi"<<endl;
+	  for(int jj=0;jj<ndpis;++jj) 
+	    {
+	      Int_t kk = ptdpis[jj];
+	      cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
+		pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
+		pythia.event[kk].pT()<<" "<<pythia.event[kk].y()<<" "<<pythia.event[kk].phi()<<" "<<endl;
+	      
+	    }
+	}
+      
+      
+      // compare code 71 dark quarks to initial dark quarks
+      Float_t a1=abs(pythia.event[dq1].phi()-pythia.event[dq711].phi());
+      if(a1>3.14159) a1=6.2832-a1;
+      a1=sqrt(pow(pythia.event[dq1].y()-pythia.event[dq711].y(),2)+pow(a1,2));
+      Float_t b1=abs(pythia.event[dq1].phi()-pythia.event[dq712].phi());
+      if(b1>3.14159) b1=6.2832-b1;
+      b1=sqrt(pow(pythia.event[dq1].y()-pythia.event[dq712].y(),2)+pow(b1,2));
+      if(a1<b1) 
+	{
+	  hdRdqdq71->Fill(a1);
+	  hpTdqdq71->Fill(pythia.event[dq1].pT(),pythia.event[dq711].pT());
+	} 
+      else 
+	{
+	  hdRdqdq71->Fill(b1);
+	  hpTdqdq71->Fill(pythia.event[dq1].pT(),pythia.event[dq712].pT());
+	}
+      
+      
+      a1=abs(pythia.event[dq2].phi()-pythia.event[dq711].phi());
+      if(a1>3.14159) a1=6.2832-a1;
+      a1=sqrt(pow(pythia.event[dq2].y()-pythia.event[dq711].y(),2)+pow(a1,2));
+      b1=abs(pythia.event[dq2].phi()-pythia.event[dq712].phi());
+      if(b1>3.14159) b1=6.2832-b1;
+      b1=sqrt(pow(pythia.event[dq2].y()-pythia.event[dq712].y(),2)+pow(b1,2));
+      if(a1<b1) 
+	{
+	  hdRdqdq71->Fill(a1);
+	  hpTdqdq71->Fill(pythia.event[dq2].pT(),pythia.event[dq711].pT());
+	} 
+      else 
+	{
+	  hdRdqdq71->Fill(b1);
+	  hpTdqdq71->Fill(pythia.event[dq2].pT(),pythia.event[dq712].pT());
+	}
+      
+      
+      // change to code 71 dark quarks
+      //    dq1=dq711;
+      //    dq2=dq712;
+      
+      
+      //get kinematic variables for initial dark quarks and d quarks
+      
+      dq1pT=pythia.event[dq1].pT();
+      dq1y=pythia.event[dq1].y();
+      dq1phi=pythia.event[dq1].phi();
+      dq2pT=pythia.event[dq2].pT();
+      dq2y=pythia.event[dq2].y();
+      dq2phi=pythia.event[dq2].phi();
+      d1pT=pythia.event[d1].pT();
+      d1y=pythia.event[d1].y();
+      d1phi=pythia.event[d1].phi();
+      d2pT=pythia.event[d2].pT();
+      d2y=pythia.event[d2].y();
+      d2phi=pythia.event[d2].phi();
+      
+      // delta r between dark quark and d quark
+      //    Float_t bbb=99999.;
+      // aaatmp=abs(dq1phi-aSlowJet.phi(ijet));
+      //  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+      //  aaatmp=sqrt(pow(dq1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+      //  if(aaatmp<dq1dR) {
+      //	dq1dR=aaatmp;
+      //	dq1sj=ijet;
+      // }
+      
+      
+      
+      
+      // variables to do matching to slow jets
+      dq1dR=99999.;
+      dq2dR=99999.;
+      d1dR=99999.;
+      d2dR=99999.;
+      
+      
+      // analyze jets
+      hnjet->Fill( aSlowJet.sizeJet() );
+      if(idbg>0) 
+	aSlowJet.list();
+      if(aSlowJet.sizeJet()>0)  
+	hjet1pT->Fill(aSlowJet.pT(0));
+      if(aSlowJet.sizeJet()>1)  
+	hjet2pT->Fill(aSlowJet.pT(1));
+      if(aSlowJet.sizeJet()>2)  
+	hjet3pT->Fill(aSlowJet.pT(2));
+      if(aSlowJet.sizeJet()>3)  
+	hjet4pT->Fill(aSlowJet.pT(3));
+      
+      
+      
+      // set up counters for number of dark pions in each jet and number of jets with at least one dark pion
+      vector<int> ndqinjet(aSlowJet.sizeJet());
+      for(int ii=0; ii<aSlowJet.sizeJet(); ii++) 
+	{ 
+	  ndqinjet[ii]=0;
+	}
+      
+      for (int ijet =0; ijet< aSlowJet.sizeJet(); ++ijet) 
+	{
+	  hjetpT->Fill(aSlowJet.pT(ijet));
+	  hjety->Fill(aSlowJet.y(ijet));
+	  hjetphi->Fill(aSlowJet.phi(ijet));
+	  
+	  // find number of dark quarks in jet
+	  for(int ll=0;ll<ndpis;++ll) 
+	    {
+	      aaatmp=abs(pythia.event[ptdpis[ll]].phi()-aSlowJet.phi(ijet));
+	      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	      aaatmp=sqrt(pow(pythia.event[ptdpis[ll]].y()-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+	      if(aaatmp<0.4) 
+		{
+		  ndqinjet[ijet]=ndqinjet[ijet]+1;
+		}
+	    }
+	  
+	  
+	  
+	  // find delta R to dq1
+	  aaatmp=abs(dq1phi-aSlowJet.phi(ijet));
+	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	  aaatmp=sqrt(pow(dq1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+	  if(aaatmp<dq1dR) 
+	    {
+	      dq1dR=aaatmp;
+	      dq1sj=ijet;
+	    }
+	  
+	  // find delta R to dq2
+	  aaatmp=abs(dq2phi-aSlowJet.phi(ijet));
+	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	  aaatmp=sqrt(pow(dq2y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+	  if(aaatmp<dq2dR) 
+	    {
+	      dq2dR=aaatmp;
+	      dq2sj=ijet;
+	    }
+	  // find delta R to d1
+	  aaatmp=abs(d1phi-aSlowJet.phi(ijet));
+	  //      cout<<d1phi<<" "<<aSlowJet.phi(ijet)<<" "<<aaatmp<<endl;
+	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	  //      cout<<d1y<<" "<<aSlowJet.y(ijet)<<endl;
+	  aaatmp=sqrt(pow(d1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+	  //      cout<<" ijet "<<ijet<<" aaatmp "<<aaatmp<<" d1dR "<<d1dR<<endl;
+	  if(aaatmp<d1dR) 
+	    {
+	      d1dR=aaatmp;
+	      d1sj=ijet;
+	    }
+	  // find delta R to d2
+	  aaatmp=abs(d2phi-aSlowJet.phi(ijet));
+	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	  aaatmp=sqrt(pow(d2y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
+	  if(aaatmp<d2dR) 
+	    {
+	      d2dR=aaatmp;
+	      d2sj=ijet;
+	    }
+	  
+	}  // end loop over slow jets
+      
+      
+      if(idbg>0) 
+	{
+	  cout<<" slow jet matching to dq1 is "<<dq1sj<<endl;
+	  cout<<" slow jet matching to dq2 is "<<dq2sj<<endl;
+	  cout<<" slow jet matching to d1 is "<<d1sj<<endl;
+	  cout<<" slow jet matching to d2 is "<<d2sj<<endl;
+	}
+  
+      //Fill Down quark Jets
+      hpTdownquark1 -> Fill( aSlowJet.pT( d1sj ) );
+      hpTdownquark2 -> Fill( aSlowJet.pT( d2sj ) );
+      hpT_Dark_downquark1 -> Fill( aSlowJet.pT( dq1sj ) );
+      hpT_Dark_downquark2 -> Fill( aSlowJet.pT( dq2sj ) );
 
       hdRdqj->Fill(dq1dR);
       hdRdqj->Fill(dq2dR);
-
+      
       hdRdj->Fill(d1dR);
       hdRdj->Fill(d2dR);
-
+      
       hdqvjet->Fill(pythia.event[dq1].pT(),aSlowJet.pT(dq1sj));
       hdqvjet->Fill(pythia.event[dq2].pT(),aSlowJet.pT(dq2sj));
       Float_t Del1 = (pythia.event[dq1].pT()-aSlowJet.pT(dq1sj))/aSlowJet.pT(dq1sj);
@@ -467,198 +545,234 @@ int main(int argc, char* argv[]) {
       //      if( (Del1>0.5&&aSlowJet.pT(dq1sj)<60) || (Del2>0.5&&aSlowJet.pT(dq2sj)<60) ) {
       //	cout<<"danger danger will robinson Del1 Del2 are "<<Del1<<" "<<Del2<<endl;
       //      }
-    
       
-
-
-
-
-
-    // another loop over slow jets to make plots about dark quarks matched to them
-    Int_t njetdpi=0;
-    if(idbg>0) cout<<" information about dark pions per jet"<<endl;
-    for (int ijet =0; ijet< aSlowJet.sizeJet(); ++ijet) {
-	if( (ijet==d1sj) || (ijet==d2sj) ) {
-	  hndpipjd->Fill(ndqinjet[ijet]);
-	}
-      if(ndqinjet[ijet]>0) {
-	njetdpi=njetdpi+1;
-	hndpipj->Fill(ndqinjet[ijet]);
-	hptjetdp->Fill(aSlowJet.pT(ijet));
-	if( (ijet!=dq1sj)&& (ijet!=dq2sj) ) {
-	  hndpipjndq->Fill(ndqinjet[ijet]);
-  	  hptjetdpndq->Fill(aSlowJet.pT(ijet));
-	} else {
-	  hndpipjdq->Fill(ndqinjet[ijet]);
-  	  hptjetdpdq->Fill(aSlowJet.pT(ijet));
-	}
-      }
-      if(idbg>0) {
-	cout<<ijet<<" "<<ndqinjet[ijet]<<endl;
-      }
-    }
-    hnjetdpi->Fill(njetdpi);
-
-
-    // find delta R between dark pions and dark quarts
-    for (int ii =0; ii< ndpis; ++ii) {
-      Int_t ipt = ptdpis[ii];
-      // find delta R to dq1
-      aaatmp=abs(dq1phi-pythia.event[ipt].phi());
-      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-      aaatmp=sqrt(pow(dq1y-pythia.event[ipt].y(),2)+pow(aaatmp,2));
-      // find delta R to dq2
-      aaatmp2=abs(dq2phi-pythia.event[ipt].phi());
-      if(aaatmp2>3.14159) aaatmp2=6.2832-aaatmp2;
-      aaatmp2=sqrt(pow(dq2y-pythia.event[ipt].y(),2)+pow(aaatmp2,2));
-      //take minimum
-      if(aaatmp2<aaatmp) aaatmp=aaatmp2;
-      //      if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;
-      hdRdpisdjet->Fill(aaatmp);
-    }
-
-
-    // for each dark quark, output daughter tree until hit stable particle
-    // dark quark 1
-    //    cout<<endl;
-    if(idbg>0) cout<<"beginning dark quark 1 "<<dq1<<endl;
-    Int_t ipt = dq1;
-    //get number of daughters
-    vector<int> dpts1;
-    vector<bool> indq1(pythia.event.size());
-    indq1[ipt]=true;
-    Int_t nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
-    for(int kk=0;kk<nd;++kk){
-      indq1[pythia.event[ipt].daughter1()+kk]=true;
-      dpts1.push_back(pythia.event[ipt].daughter1()+kk);
-    }
-
       
-    while(dpts1.size()>0) {
-      ipt=dpts1[0];
-      dpts1.erase(dpts1.begin());
-      nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
-      for(int kk=0;kk<nd;++kk){
-	if( (pythia.event[pythia.event[ipt].daughter1()+kk].isFinal()==false)&&
-	    (abs(pythia.event[pythia.event[ipt].daughter1()+kk].id())>4900000)
-	   ) {
-          dpts1.push_back(pythia.event[ipt].daughter1()+kk);
+      
+      
+      
+      
+      
+      // another loop over slow jets to make plots about dark quarks matched to them
+      Int_t njetdpi=0;
+      if(idbg>0) cout<<" information about dark pions per jet"<<endl;
+      for (int ijet =0; ijet< aSlowJet.sizeJet(); ++ijet) 
+	{
+	  if( (ijet==d1sj) || (ijet==d2sj) ) 
+	    {
+	      hndpipjd->Fill(ndqinjet[ijet]);
+	    }
+	  if(ndqinjet[ijet]>0) 
+	    {
+	      njetdpi=njetdpi+1;
+	      hndpipj->Fill(ndqinjet[ijet]);
+	      hptjetdp->Fill(aSlowJet.pT(ijet));
+	      if( (ijet!=dq1sj)&& (ijet!=dq2sj) ) 
+		{
+		  hndpipjndq->Fill(ndqinjet[ijet]);
+		  hptjetdpndq->Fill(aSlowJet.pT(ijet));
+		} 
+	      else 
+		{
+		  hndpipjdq->Fill(ndqinjet[ijet]);
+		  hptjetdpdq->Fill(aSlowJet.pT(ijet));
+		}
+	    }
+	  if(idbg>0) 
+	    {
+	      cout<<ijet<<" "<<ndqinjet[ijet]<<endl;
+	    }
+	}
+      hnjetdpi->Fill(njetdpi);
+      
+      
+      // find delta R between dark pions and dark quarts
+      for (int ii =0; ii< ndpis; ++ii) 
+	{
+	  Int_t ipt = ptdpis[ii];
+	  // find delta R to dq1
+	  aaatmp=abs(dq1phi-pythia.event[ipt].phi());
+	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	  aaatmp=sqrt(pow(dq1y-pythia.event[ipt].y(),2)+pow(aaatmp,2));
+	  // find delta R to dq2
+	  aaatmp2=abs(dq2phi-pythia.event[ipt].phi());
+	  if(aaatmp2>3.14159) aaatmp2=6.2832-aaatmp2;
+	  aaatmp2=sqrt(pow(dq2y-pythia.event[ipt].y(),2)+pow(aaatmp2,2));
+	  //take minimum
+	  if(aaatmp2<aaatmp) aaatmp=aaatmp2;
+	  //      if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;
+	  hdRdpisdjet->Fill(aaatmp);
+	}
+      
+      
+      // for each dark quark, output daughter tree until hit stable particle
+      // dark quark 1
+      //    cout<<endl;
+      if(idbg>0) cout<<"beginning dark quark 1 "<<dq1<<endl;
+      Int_t ipt = dq1;
+      //get number of daughters
+      vector<int> dpts1;
+      vector<bool> indq1(pythia.event.size());
+      indq1[ipt]=true;
+      Int_t nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
+      for(int kk=0;kk<nd;++kk)
+	{
 	  indq1[pythia.event[ipt].daughter1()+kk]=true;
+	  dpts1.push_back(pythia.event[ipt].daughter1()+kk);
 	}
-      }
-    }
-    if(idbg>0) cout<<" id mothers daughters pt y phi deltaR"<<endl;
-    for(int kk=0;kk<pythia.event.size();++kk) {
-      if(indq1[kk]) {
-	aaatmp=abs(dq1phi-pythia.event[kk].phi());
-        if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-        aaatmp=sqrt(pow(dq1y-pythia.event[kk].y(),2)+pow(aaatmp,2));
-
-        if(idbg>0) cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
-	  pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
-        pythia.event[kk].pT()<<" "<<pythia.event[kk].y()<<" "<<pythia.event[kk].phi()<<" "<<aaatmp<<endl;
-      }
-    }
-    
-    // dark quark 2
-    //    cout<<endl;
-    if(idbg>0) cout<<"beginning dark quark 2 "<<dq2<<endl;
-    ipt = dq2;
-    //get number of daughters
-    vector<int> dpts2;
-    vector<bool> indq2(pythia.event.size());
-    indq2[ipt]=true;
-    nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
-    for(int kk=0;kk<nd;++kk){
-      indq2[pythia.event[ipt].daughter1()+kk]=true;
-      dpts2.push_back(pythia.event[ipt].daughter1()+kk);
-    }
+      
+      
+      while(dpts1.size()>0) 
+	{
+	  ipt=dpts1[0];
+	  dpts1.erase(dpts1.begin());
+	  nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
+	  for(int kk=0;kk<nd;++kk){
+	    if( (pythia.event[pythia.event[ipt].daughter1()+kk].isFinal()==false)&&
+		(abs(pythia.event[pythia.event[ipt].daughter1()+kk].id())>4900000)
+		) 
+	      {
+		dpts1.push_back(pythia.event[ipt].daughter1()+kk);
+		indq1[pythia.event[ipt].daughter1()+kk]=true;
+	      }
+	  }
+	}
+      if(idbg>0) cout<<" id mothers daughters pt y phi deltaR"<<endl;
+      for(int kk=0;kk<pythia.event.size();++kk) 
+	{
+	  if(indq1[kk]) 
+	    {
+	      aaatmp=abs(dq1phi-pythia.event[kk].phi());
+	      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	      aaatmp=sqrt(pow(dq1y-pythia.event[kk].y(),2)+pow(aaatmp,2));
+	      
+	      if(idbg>0) cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
+			   pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
+			   pythia.event[kk].pT()<<" "<<pythia.event[kk].y()<<" "<<pythia.event[kk].phi()<<" "<<aaatmp<<endl;
+	    }
+	}
+      
+      // dark quark 2
+      //    cout<<endl;
+      if(idbg>0) cout<<"beginning dark quark 2 "<<dq2<<endl;
+      ipt = dq2;
+      //get number of daughters
+      vector<int> dpts2;
+      vector<bool> indq2(pythia.event.size());
+      indq2[ipt]=true;
+      nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
+      for(int kk=0;kk<nd;++kk)
+	{
+	  indq2[pythia.event[ipt].daughter1()+kk]=true;
+	  dpts2.push_back(pythia.event[ipt].daughter1()+kk);
+	}
+      
+      
+      while(dpts2.size()>0) 
+	{
+	  ipt=dpts2[0];
+	  dpts2.erase(dpts2.begin());
+	  nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
+	  for(int kk=0;kk<nd;++kk)
+	    {
+	      if( (pythia.event[pythia.event[ipt].daughter1()+kk].isFinal()==false)&&
+		  (abs(pythia.event[pythia.event[ipt].daughter1()+kk].id())>4900000)
+		  ) 
+		{
+		  dpts2.push_back(pythia.event[ipt].daughter1()+kk);
+		  indq2[pythia.event[ipt].daughter1()+kk]=true;
+		}
+	    }
+	}
+      if(idbg>0) cout<<" id mothers daughters pt y phi deltaR"<<endl;
+      for(int kk=0;kk<pythia.event.size();++kk) 
+	{
+	  if(indq2[kk]) 
+	    {
+	      aaatmp=abs(dq2phi-pythia.event[kk].phi());
+	      if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	      aaatmp=sqrt(pow(dq2y-pythia.event[kk].y(),2)+pow(aaatmp,2));
+	      
+	      if(idbg>0) cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
+			   pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
+			   pythia.event[kk].pT()<<" "<<pythia.event[kk].y()<<" "<<pythia.event[kk].phi()<<" "<<aaatmp<<endl;
+	    }
+	}
+      
 
       
-    while(dpts2.size()>0) {
-      ipt=dpts2[0];
-      dpts2.erase(dpts2.begin());
-      nd = pythia.event[ipt].daughter2()-pythia.event[ipt].daughter1()+1;
-      for(int kk=0;kk<nd;++kk){
-	if( (pythia.event[pythia.event[ipt].daughter1()+kk].isFinal()==false)&&
-	    (abs(pythia.event[pythia.event[ipt].daughter1()+kk].id())>4900000)
-	   ) {
-          dpts2.push_back(pythia.event[ipt].daughter1()+kk);
-	  indq2[pythia.event[ipt].daughter1()+kk]=true;
+      
+      
+      
+      //calculate trigger HT
+      Float_t trigHT=0.;
+      for (int ijet =0; ijet< trigSlowJet.sizeJet(); ++ijet) 
+	{
+	  trigHT=trigHT+trigSlowJet.pT(ijet);
 	}
-      }
-    }
-    if(idbg>0) cout<<" id mothers daughters pt y phi deltaR"<<endl;
-    for(int kk=0;kk<pythia.event.size();++kk) {
-      if(indq2[kk]) {
-	aaatmp=abs(dq2phi-pythia.event[kk].phi());
-        if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-        aaatmp=sqrt(pow(dq2y-pythia.event[kk].y(),2)+pow(aaatmp,2));
-
-        if(idbg>0) cout<<kk<<" "<<pythia.event[kk].id()<<" "<<pythia.event[kk].mother1()<<" "<<pythia.event[kk].mother2()<<" "<<
-	  pythia.event[kk].daughter1()<<" "<<pythia.event[kk].daughter2()<<" "<<
-        pythia.event[kk].pT()<<" "<<pythia.event[kk].y()<<" "<<pythia.event[kk].phi()<<" "<<aaatmp<<endl;
-      }
-    }
-    
-
-
-
-
-
-    //calculate trigger HT
-    Float_t trigHT=0.;
-    for (int ijet =0; ijet< trigSlowJet.sizeJet(); ++ijet) {
-      trigHT=trigHT+trigSlowJet.pT(ijet);
-    }
-    htright->Fill(trigHT);
-
-    // event selection
-    Int_t icut =0;
-    bool pass = true;
-
-    hcutflow->Fill(icut+0.5); icut++;// all events
-
-    if(trigHT>800) hcutflow->Fill(icut+0.5); icut++;  //trigger
-
-    if(aSlowJet.sizeJet()>0) {
-      if(aSlowJet.pT(0)>400) {
-	if(pass) hcutflow->Fill(icut+0.5); icut++;
-      }  else {
-	pass=false;
-      }
-    }
-    if(aSlowJet.sizeJet()>1) {
-      if(aSlowJet.pT(1)>200) {
-	if(pass) hcutflow->Fill(icut+0.5); icut++;
-      }  else {
-	pass=false;
-      }
-    }
-    if(aSlowJet.sizeJet()>2) {
-      if(aSlowJet.pT(2)>125) {
-	if(pass) hcutflow->Fill(icut+0.5); icut++;
-      }  else {
-	pass=false;
-      }
-    }
-    if(aSlowJet.sizeJet()>3) {
-      if(aSlowJet.pT(3)>50) {
-	if(pass) hcutflow->Fill(icut+0.5);icut++;
-      }  else {
-	pass=false;
-      }
-    }
-
-
-
-
-  }  // end loop over events
-
+      htright->Fill(trigHT);
+      
+      // event selection
+      Int_t icut =0;
+      bool pass = true;
+      
+      hcutflow->Fill(icut+0.5); icut++;// all events
+      
+      if(trigHT>800) hcutflow->Fill(icut+0.5); icut++;  //trigger
+      
+      if(aSlowJet.sizeJet()>0) 
+	{
+	  if(aSlowJet.pT(0)>400) 
+	    {
+	      if(pass) hcutflow->Fill(icut+0.5); icut++;
+	    }  
+	  else 
+	    {
+	      pass=false;
+	    }
+	}
+      if(aSlowJet.sizeJet()>1) 
+	{
+	  if(aSlowJet.pT(1)>200) 
+	    {
+	      if(pass) hcutflow->Fill(icut+0.5); icut++;
+	    }  
+	  else 
+	    {
+	      pass=false;
+	    }
+	}
+      if(aSlowJet.sizeJet()>2) 
+	{
+	  if(aSlowJet.pT(2)>125) 
+	    {
+	      if(pass) hcutflow->Fill(icut+0.5); icut++;
+	    }  
+	  else 
+	    {
+	      pass=false;
+	    }
+	}
+      if(aSlowJet.sizeJet()>3) 
+	{
+	  if(aSlowJet.pT(3)>50) 
+	    {
+	      if(pass) hcutflow->Fill(icut+0.5);icut++;
+	    }  
+	  else 
+	    {
+	      pass=false;
+	    }
+	}
+      
+      
+      
+      
+    }  // end loop over events
+  
   // Statistics on event generation.
   pythia.stat();
-
-
+  
+  
   // Save histogram on file and close file.
   hdRdqdq71->Write();
   hpTdqdq71->Write();
@@ -707,8 +821,22 @@ int main(int argc, char* argv[]) {
   hjet4pT->Write();
   hjety->Write();
   hjetphi->Write();
-  delete outFile;
 
+  //My Added Histograms
+  TH1F *combined_pT = (TH1F*)hpTdownquark1->Clone();
+  combined_pT -> SetName("Combined pT");
+
+  hpTdownquark1 -> Draw("c");
+  hpTdownquark1 -> Write();
+
+  hpT_Dark_downquark1 -> Write();
+  combined_pT-> Draw("C");
+  hpT_Dark_downquark1 -> Draw("C SAME");
+  
+  combined_pT -> Write();
+  c1 -> Write();
+  delete outFile;
+  
   // Done.
   return 0;
 }
