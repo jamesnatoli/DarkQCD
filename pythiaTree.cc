@@ -29,6 +29,9 @@
 //TCanvas for drawing Histograms
 #include <TCanvas.h>
 
+//TLegend for Legends
+#include <TLegend.h>
+
 using namespace Pythia8;
 
 int nCharged, nNeutral, nTot;
@@ -107,16 +110,20 @@ int main(int argc, char* argv[]) {
   hpTdownquark1 -> SetLineColor(1);
   hpTdownquark1 -> SetLineWidth(2);
 
-  TH1F *hpTdownquark2 = new TH1F("hpTdownquark2", "pT of down quark jets 2", 50, 0., 1200.);
-  hpTdownquark2 -> SetLineColor(1);
-
   TH1F *hpT_Dark_downquark1 = new TH1F("hpT_Dark_downquark1", "pT of DARK down quark jets", 50, 0., 1500.);
   hpT_Dark_downquark1 -> SetLineColor(4);
   hpT_Dark_downquark1 -> SetLineWidth(2);
 
-  TH1F *hpT_Dark_downquark2 = new TH1F("hpT_Dark_downquark2", "pT of DARK down quark jets 2", 50, 0., 1200.);
-  hpT_Dark_downquark2 -> SetLineColor(4);
- 
+  TH1F *numpart_Dark_jets = new TH1F("numpart_Dark_jets", "# of Particles in Dark Jet", 50, 0., 100);
+  numpart_Dark_jets -> SetLineColor(4);
+  numpart_Dark_jets -> SetLineWidth(2);
+  numpart_Dark_jets -> SetFillColor(4);
+  
+  TH1F *numpartjets = new TH1F("numpartjets", "# of Particles in Jet", 50, 0., 100);
+  numpartjets -> SetLineColor(1);
+  numpartjets -> SetLineWidth(2);
+  numpartjets -> SetFillColor(1);
+
   //Create Canvas for drawing histograms
   TCanvas *c1 = new TCanvas("c1", "demo", 200, 10, 900, 500);
   c1 -> SetFillColor(42);
@@ -531,9 +538,11 @@ int main(int argc, char* argv[]) {
   
       //Fill Down quark Jets
       hpTdownquark1 -> Fill( aSlowJet.pT( d1sj ) );
-      hpTdownquark2 -> Fill( aSlowJet.pT( d2sj ) );
+      numpartjets -> Fill( aSlowJet.constituents( d1sj ).size() );
+      //Fill Dark Quark Jets
       hpT_Dark_downquark1 -> Fill( aSlowJet.pT( dq1sj ) );
-      hpT_Dark_downquark2 -> Fill( aSlowJet.pT( dq2sj ) );
+      numpart_Dark_jets -> Fill( aSlowJet.constituents( dq1sj ).size() );
+      
 
       hdRdqj->Fill(dq1dR);
       hdRdqj->Fill(dq2dR);
@@ -827,20 +836,28 @@ int main(int argc, char* argv[]) {
 
   //My Added Histograms
   TH1F *combined_pT = (TH1F*)hpTdownquark1->Clone();
-  combined_pT -> SetName("Combined pT");
-  combined_pT -> SetFillColor(1);
+  combined_pT -> SetNameTitle("Combined pT", "pT of both Dark and Down Jets");
+  //combined_pT -> SetFillColor(1);
+  TH1F *combined_NumPartJets = (TH1F*)numpartjets -> Clone();
+  combined_NumPartJets -> SetNameTitle("Combined Num", "Number of Particles in Dark and Reg Jets");
   
   hpTdownquark1 -> Draw("c");
   hpTdownquark1 -> Write();
 
   hpT_Dark_downquark1 -> Write();
-  hpT_Dark_downquark1 -> SetFillColor(4);
+  // hpT_Dark_downquark1 -> SetFillColor(4);
   combined_pT-> Draw("");
   hpT_Dark_downquark1 -> Draw("SAME");
   
+  numpartjets -> Write();
+  numpart_Dark_jets -> Write();
+  combined_NumPartJets -> Draw("");
+  numpart_Dark_jets -> Draw("same");
+
+  combined_NumPartJets -> Write();
   combined_pT -> Write();
   c1 -> Write();
-  c1 -> SaveAs("MonaLisa.gif");
+  //c1 -> SaveAs("MonaLisa.gif");
 
   delete outFile;
   
