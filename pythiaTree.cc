@@ -36,11 +36,12 @@ using namespace Pythia8;
 
 int nCharged, nNeutral, nTot;
 
-int main(int argc, char* argv[]) {
-
+int main(int argc, char* argv[]) 
+{
+  
   // Create the ROOT application environment.
   TApplication theApp("hist", &argc, argv);
-
+  
   // Create Pythia instance and set it up to generate hard QCD processes
   // above pTHat = 20 GeV for pp collisions at 14 TeV.
   Pythia pythia;
@@ -114,15 +115,19 @@ int main(int argc, char* argv[]) {
   hpT_Dark_downquark1 -> SetLineColor(4);
   hpT_Dark_downquark1 -> SetLineWidth(2);
 
-  TH1F *numpart_Dark_jets = new TH1F("numpart_Dark_jets", "# of Particles in Dark Jet", 50, 0., 100);
+  TH1F *numpart_Dark_jets = new TH1F("numpart_Dark_jets", "# of Particles in Dark Jet", 50, 0., 300);
   numpart_Dark_jets -> SetLineColor(4);
   numpart_Dark_jets -> SetLineWidth(2);
   numpart_Dark_jets -> SetFillColor(4);
   
-  TH1F *numpartjets = new TH1F("numpartjets", "# of Particles in Jet", 50, 0., 100);
+  TH1F *numpartjets = new TH1F("numpartjets", "# of Particles in Jet", 50, 0., 300);
   numpartjets -> SetLineColor(1);
   numpartjets -> SetLineWidth(2);
   numpartjets -> SetFillColor(1);
+
+  TH1F *IPdown = new TH1F("IPdown", "Impact Parameter for all Down Quarks",200, 0., .01);
+  
+  TH1F *IPdowndau = new TH1F("IPdowndau", "Impact Paremeter first stable daughter", 100, 0., 1000);
 
   //Create Canvas for drawing histograms
   TCanvas *c1 = new TCanvas("c1", "demo", 200, 10, 900, 500);
@@ -142,7 +147,8 @@ int main(int argc, char* argv[]) {
 
   // Begin event loop. Generate event; skip if generation aborted.
 
-
+  //Magnitude of Field
+  float Bmag;
   Int_t ndpis,ndqs,ndq71,ndqnm,m1,m2,ipid,dq1,dq2,d1,d2;
   Int_t dq711,dq712;
   Int_t idbg=0;
@@ -188,6 +194,8 @@ int main(int argc, char* argv[]) {
       d2=0;
       dq711=0;
       dq712=0;
+      Bmag = 3.8;
+      
       
       
       for (int i = 0; i < pythia.event.size(); ++i) 
@@ -215,34 +223,35 @@ int main(int argc, char* argv[]) {
 			{
 			  d1=pythia.event[m1].daughter2();
 			}
-		    } 
-		  else 
-		    {
-		      dq2=i;
-		      if(abs(pythia.event[pythia.event[m1].daughter1()].id())==1) 
-			{
-			  d2=pythia.event[m1].daughter1();
-			} 
-		      else
-			{
-			  d2=pythia.event[m1].daughter2();
-			}
 		    }
 		}
-	      // look for dark quarks with code 71
-	      if(abs(pythia.event[i].status())==71) {
-		ndq71++;
-		if(idbg>0) cout<<" dark quark with code 71 is "<<i<<" "<<pythia.event[i].pT()<<" "<<pythia.event[i].y()<<" "<<pythia.event[i].phi()<<endl;
-		if(dq711==0) 
-		  {
-		    dq711=i;
-		  } 
-		else 
-		  {
-		    dq712=i;
-		  }
-	      }
+	      else 
+		{
+		  dq2=i;
+		  if(abs(pythia.event[pythia.event[m1].daughter1()].id())==1) 
+		    {
+		      d2=pythia.event[m1].daughter1();
+		    } 
+		  else
+		    {
+		      d2=pythia.event[m1].daughter2();
+		    }
+		}
 	    }
+	  // look for dark quarks with code 71
+	  if(abs(pythia.event[i].status())==71) {
+	    ndq71++;
+	    if(idbg>0) cout<<" dark quark with code 71 is "<<i<<" "<<pythia.event[i].pT()<<" "<<pythia.event[i].y()<<" "<<pythia.event[i].phi()<<endl;
+	    if(dq711==0) 
+	      {
+		dq711=i;
+	      } 
+	    else 
+	      {
+		dq712=i;
+	      }
+	  }
+
 	  // look at all HV particles
 	  if(abs(pythia.event[i].id())>4900000) 
 	    {
@@ -280,7 +289,7 @@ int main(int argc, char* argv[]) {
 		  //	      cout<<"daught momentum is "<<pythia.event[iii].px()<<","<<pythia.event[iii].py()<<","<<pythia.event[iii].pz()<<endl;
 		  //	    }
 		  //          }
-
+		  
 		  Int_t nstable=0;
 		  for(int ij=0; ij<ndauHV; ++ij) 
 		    {  // loop over all the HV particle's daughters
@@ -306,6 +315,9 @@ int main(int argc, char* argv[]) {
 			  //		std::cout<<" danger will r: dark gluon with stable child "<<pythia.event[pythia.event[i].daughter1()+ij].id()<<std::endl;
 			  //		std::cout<<" daughters are "<<pythia.event[iii].daughter1()<<" "<<pythia.event[iii].daughter2()<<std::endl;
 			  //	      }
+			  
+			  
+			  
 			}	// end if final
 		    }  // end loop over HV daughters
 		}
@@ -324,6 +336,41 @@ int main(int argc, char* argv[]) {
 	      nTot=nTot+1;  //count
 	      //	cout<<"   id px py pz e "<<pythia.event[i].id()<<" "<<pythia.event[i].px()<<" "<<pythia.event[i].py()<<" "<<pythia.event[i].pz()<<" "<<pythia.event[i].e()<<std::endl;
 	    }
+	  
+	  
+	  //Calculate impact Parameter for Down Quarks
+	  
+	  //Find number of daughters
+	  Int_t ndaugh = pythia.event[i].daughter2() - pythia.event[i].daughter1() + 1;
+	  //Variables for center of circle
+	  Float_t xC, yC, Radius;
+	  if( pythia.event[i].id() == 1)
+	    {
+	      Radius = 100 * pythia.event[i].pT() / 0.3 / Bmag;
+	      xC = pythia.event[i].xProd() - Radius * sin( pythia.event[i].phi() );
+	      yC = pythia.event[i].yProd() - Radius * cos( pythia.event[i].phi() );
+
+	      Float_t downqIP = sqrt( pow( xC, 2) + pow(yC, 2)) - Radius;
+	      for( int beep = 0; beep < ndaugh; beep++)
+		{
+		  int big = pythia.event[i].daughter1();
+		  
+		  //Test if Stable
+		  if (pythia.event[big].isFinal() )
+		    {
+		      Radius = 100 * pythia.event[big].pT() / 0.3 / Bmag;
+		      xC = pythia.event[big].xProd() - Radius * sin( pythia.event[big].phi() );
+		      yC = pythia.event[big].yProd() - Radius * cos( pythia.event[big].phi() );
+		      Float_t downqdauIP = sqrt( pow( xC, 2) + pow( yC, 2)) - Radius;
+		      IPdowndau -> Fill( downqdauIP );
+		    }
+		  //Fill Histogram
+		  IPdown -> Fill( downqIP );
+		  
+		}//end for loop over daughters
+	    }//end exclusion for down quarks
+	  
+	  
 	}  // end particle list loop 
       // Fill charged multiplicity in histogram. End event loop.
       hmultch->Fill( nCharged );
@@ -852,10 +899,15 @@ int main(int argc, char* argv[]) {
   numpartjets -> Write();
   numpart_Dark_jets -> Write();
   combined_NumPartJets -> Draw("");
-  numpart_Dark_jets -> Draw("same");
+numpart_Dark_jets -> Draw("same");
 
-  combined_NumPartJets -> Write();
-  combined_pT -> Write();
+combined_NumPartJets -> Write();
+combined_pT -> Write();
+
+//Histograms for Impact Parameter
+IPdown -> Write();
+IPdowndau -> Write();
+
   c1 -> Write();
   //c1 -> SaveAs("MonaLisa.gif");
 
