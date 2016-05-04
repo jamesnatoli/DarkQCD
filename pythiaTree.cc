@@ -36,6 +36,20 @@ using namespace Pythia8;
 
 int nCharged, nNeutral, nTot;
 
+Float_t ImpactParameter( Float_t pTcalc, Float_t xProd, Float_t yProd, Float_t phicalc )
+{
+  const float Bmag = 3.8;
+  Float_t Radius, xCent, yCent, ImpPar;
+  
+  Radius = 100 * pTcalc / 0.3 / Bmag; // is this correct?
+  xCent = xProd - Radius * sin( phicalc );
+  yCent = yProd - Radius * cos( phicalc );
+  
+  ImpPar = sqrt( pow( xCent, 2) + pow( yCent, 2)) - Radius;
+  return ImpPar;
+}
+
+
 int main(int argc, char* argv[]) 
 {
   
@@ -118,7 +132,7 @@ int main(int argc, char* argv[])
   TH1F *numpart_Dark_jets = new TH1F("numpart_Dark_jets", "# of Particles in Dark Jet", 50, 0., 300);
   numpart_Dark_jets -> SetLineColor(4);
   numpart_Dark_jets -> SetLineWidth(2);
-  numpart_Dark_jets -> SetFillColor(4);
+   numpart_Dark_jets -> SetFillColor(4);
   
   TH1F *numpartjets = new TH1F("numpartjets", "# of Particles in Jet", 50, 0., 300);
   numpartjets -> SetLineColor(1);
@@ -127,7 +141,7 @@ int main(int argc, char* argv[])
 
   TH1F *IPdown = new TH1F("IPdown", "Impact Parameter for all Down Quarks",200, 0., .01);
   
-  TH1F *IPdowndau = new TH1F("IPdowndau", "Impact Paremeter first stable daughter", 100, 0., 1000);
+  TH1F *IPdowndau = new TH1F("IPdowndau", "Closest approachfirst stable daughter", 100,-100, 100);
 
   //Create Canvas for drawing histograms
   TCanvas *c1 = new TCanvas("c1", "demo", 200, 10, 900, 500);
@@ -147,8 +161,7 @@ int main(int argc, char* argv[])
 
   // Begin event loop. Generate event; skip if generation aborted.
 
-  //Magnitude of Field
-  float Bmag;
+
   Int_t ndpis,ndqs,ndq71,ndqnm,m1,m2,ipid,dq1,dq2,d1,d2;
   Int_t dq711,dq712;
   Int_t idbg=0;
@@ -194,7 +207,6 @@ int main(int argc, char* argv[])
       d2=0;
       dq711=0;
       dq712=0;
-      Bmag = 3.8;
       
       
       
@@ -339,18 +351,23 @@ int main(int argc, char* argv[])
 	  
 	  
 	  //Calculate impact Parameter for Down Quarks
-	  
+	  //Float_t Radius, xC, yC;
+
 	  //Find number of daughters
 	  Int_t ndaugh = pythia.event[i].daughter2() - pythia.event[i].daughter1() + 1;
+
 	  //Variables for center of circle
-	  Float_t xC, yC, Radius;
+
+	  Float_t x0, x1, x2, x3;
 	  if( pythia.event[i].id() == 1)
 	    {
-	      Radius = 100 * pythia.event[i].pT() / 0.3 / Bmag;
-	      xC = pythia.event[i].xProd() - Radius * sin( pythia.event[i].phi() );
-	      yC = pythia.event[i].yProd() - Radius * cos( pythia.event[i].phi() );
-
-	      Float_t downqIP = sqrt( pow( xC, 2) + pow(yC, 2)) - Radius;
+	      x0 = pythia.event[i].pT();
+	      x1 = pythia.event[i].xProd();
+	      x2 = pythia.event[i].yProd();
+	      x3 = pythia.event[i].phi();
+	      
+	      Float_t downqIP = ImpactParameter( x0, x1, x2, x3);
+	      
 	      for( int beep = 0; beep < ndaugh; beep++)
 		{
 		  int big = pythia.event[i].daughter1();
@@ -358,10 +375,12 @@ int main(int argc, char* argv[])
 		  //Test if Stable
 		  if (pythia.event[big].isFinal() )
 		    {
-		      Radius = 100 * pythia.event[big].pT() / 0.3 / Bmag;
-		      xC = pythia.event[big].xProd() - Radius * sin( pythia.event[big].phi() );
-		      yC = pythia.event[big].yProd() - Radius * cos( pythia.event[big].phi() );
-		      Float_t downqdauIP = sqrt( pow( xC, 2) + pow( yC, 2)) - Radius;
+		      x0 = pythia.event[big].pT();
+		      x1 = pythia.event[big].xProd();
+		      x2 = pythia.event[big].yProd();
+		      x3 = pythia.event[big].phi();
+
+		      Float_t downqdauIP = ImpactParameter( x0, x1, x2, x3 );
 		      IPdowndau -> Fill( downqdauIP );
 		    }
 		  //Fill Histogram
@@ -826,7 +845,7 @@ int main(int argc, char* argv[])
       
       
       
-    }  // end loop over events
+}  // end loop over events
   
   // Statistics on event generation.
   pythia.stat();
@@ -884,35 +903,37 @@ int main(int argc, char* argv[])
   //My Added Histograms
   TH1F *combined_pT = (TH1F*)hpTdownquark1->Clone();
   combined_pT -> SetNameTitle("Combined pT", "pT of both Dark and Down Jets");
-  //combined_pT -> SetFillColor(1);
+
   TH1F *combined_NumPartJets = (TH1F*)numpartjets -> Clone();
   combined_NumPartJets -> SetNameTitle("Combined Num", "Number of Particles in Dark and Reg Jets");
   
-  hpTdownquark1 -> Draw("c");
+  hpTdownquark1 -> Draw("");
   hpTdownquark1 -> Write();
 
-  hpT_Dark_downquark1 -> Write();
-  // hpT_Dark_downquark1 -> SetFillColor(4);
   combined_pT-> Draw("");
   hpT_Dark_downquark1 -> Draw("SAME");
-  
+  hpT_Dark_downquark1 -> Write();
+  combined_pT -> Write();
+
+  c1 -> SaveAs("Prettypic.gif");
+
   numpartjets -> Write();
   numpart_Dark_jets -> Write();
   combined_NumPartJets -> Draw("");
-numpart_Dark_jets -> Draw("same");
+  numpart_Dark_jets -> Draw("same");
+  combined_NumPartJets -> Write();
 
-combined_NumPartJets -> Write();
-combined_pT -> Write();
-
-//Histograms for Impact Parameter
-IPdown -> Write();
-IPdowndau -> Write();
-
+  c1 -> SaveAs("MonaLisa.gif");
+  
+  //Histograms for Impact Parameter
+  IPdown -> Write();
+  IPdowndau -> Write();
+  
   c1 -> Write();
-  //c1 -> SaveAs("MonaLisa.gif");
-
+  
   delete outFile;
   
   // Done.
   return 0;
 }
+
