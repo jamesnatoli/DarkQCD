@@ -36,14 +36,14 @@ using namespace Pythia8;
 
 int nCharged, nNeutral, nTot;
 
-Float_t ImpactParameter( Float_t pTcalc, Float_t xProd, Float_t yProd, Float_t phicalc )
+Float_t ImpactParameter( Float_t pTcalc, Float_t xProd, Float_t yProd, Float_t phicalc, double chg )
 {
   const float Bmag = 3.8;
   Float_t Radius, xCent, yCent, ImpPar;
   
-  Radius = 100 * pTcalc / 0.3 / Bmag; // is this correct?
-  xCent = xProd - Radius * sin( phicalc );
-  yCent = yProd - Radius * cos( phicalc );
+  Radius = 100 * pTcalc / 0.3 / Bmag; 
+  xCent = - ( xProd + chg * Radius * sin( phicalc ) );
+  yCent = - ( yProd - chg * Radius * cos( phicalc ) );
   
   ImpPar = sqrt( pow( xCent, 2) + pow( yCent, 2)) - Radius;
   return ImpPar;
@@ -139,9 +139,13 @@ int main(int argc, char* argv[])
   numpartjets -> SetLineWidth(2);
   numpartjets -> SetFillColor(1);
 
-  TH1F *IPdown = new TH1F("IPdown", "Impact Parameter for all Down Quarks",200, 0., .01);
+  TH1F *IPdown = new TH1F("IPdown", "Impact Parameter for all Down Quarks",200, -.01, .01);
   
-  TH1F *IPdowndau = new TH1F("IPdowndau", "Closest approachfirst stable daughter", 100,-100, 100);
+  TH1F *IPdowndau = new TH1F("IPdowndau", "Closest approach first stable daughter", 200,-.01, .01);
+
+  TH1F *IPVdowndau = new TH1F("IPVdowndau", "Closest Appraoch First Stable Daugheter of Dark Particles", 100, -1000, 4000);
+
+  TH1F *IPVpiDau = new TH1F("IPVpiDau", "Closest approach Stable Daughter of Dark Pi's cut Delta R < 0.4", 100, -1000, 4000); 
 
   //Create Canvas for drawing histograms
   TCanvas *c1 = new TCanvas("c1", "demo", 200, 10, 900, 500);
@@ -302,15 +306,25 @@ int main(int argc, char* argv[])
 		  //	    }
 		  //          }
 		  
+		  Float_t a0, a1, a2, a3, a4;
 		  Int_t nstable=0;
-		  for(int ij=0; ij<ndauHV; ++ij) 
+		  for(int ij = 0; ij < ndauHV; ++ij) 
 		    {  // loop over all the HV particle's daughters
-		      Int_t iii = pythia.event[i].daughter1()+ij;
+		      Int_t iii = pythia.event[i].daughter1() + ij;
 		      
 		      if(pythia.event[iii].isFinal()) 
 			{  // for stable daughters of HV particles
 			  Float_t d0dHV = sqrt(pow(pythia.event[iii].xProd(),2)+pow(pythia.event[iii].yProd(),2));
 			  
+			  //Calculate parameters for Impact Parameter Function
+			  a0 = pythia.event[iii].pT();
+			  a1 = pythia.event[iii].xProd();
+			  a2 = pythia.event[iii].yProd();
+			  a3 = pythia.event[iii].phi();
+			  a4 = pythia.event[iii].charge();
+
+			  Float_t VdownqIP = ImpactParameter( a0, a1, a2, a3, a4);
+			  IPVdowndau -> Fill( VdownqIP );
 			  if(nstable==0) 
 			    { // if his a particle that is stable (first one)
 			      hnsdau->Fill(pythia.event[i].daughter2()-pythia.event[i].daughter1());
@@ -358,19 +372,20 @@ int main(int argc, char* argv[])
 
 	  //Variables for center of circle
 
-	  Float_t x0, x1, x2, x3;
+	  Float_t x0, x1, x2, x3, x4;
 	  if( pythia.event[i].id() == 1)
 	    {
 	      x0 = pythia.event[i].pT();
 	      x1 = pythia.event[i].xProd();
 	      x2 = pythia.event[i].yProd();
 	      x3 = pythia.event[i].phi();
-	      
-	      Float_t downqIP = ImpactParameter( x0, x1, x2, x3);
+	      x4 = pythia.event[i].charge();
+
+	      Float_t downqIP = ImpactParameter( x0, x1, x2, x3, x4);
 	      
 	      for( int beep = 0; beep < ndaugh; beep++)
 		{
-		  int big = pythia.event[i].daughter1();
+		  int big = pythia.event[i].daughter1() + beep;
 		  
 		  //Test if Stable
 		  if (pythia.event[big].isFinal() )
@@ -379,8 +394,9 @@ int main(int argc, char* argv[])
 		      x1 = pythia.event[big].xProd();
 		      x2 = pythia.event[big].yProd();
 		      x3 = pythia.event[big].phi();
+		      x4 = pythia.event[big].charge();
 
-		      Float_t downqdauIP = ImpactParameter( x0, x1, x2, x3 );
+		      Float_t downqdauIP = ImpactParameter( x0, x1, x2, x3, x4);
 		      IPdowndau -> Fill( downqdauIP );
 		    }
 		  //Fill Histogram
@@ -551,13 +567,14 @@ int main(int argc, char* argv[])
 	  
 	  
 	  // find delta R to dq1
-	  aaatmp=abs(dq1phi-aSlowJet.phi(ijet));
-	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-	  aaatmp=sqrt(pow(dq1y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
-	  if(aaatmp<dq1dR) 
+	  aaatmp = abs( dq1phi - aSlowJet.phi( ijet ));
+	  if(aaatmp > 3.14159) 
+	    aaatmp = 6.2832 - aaatmp;
+	  aaatmp=sqrt( pow( dq1y - aSlowJet.y(ijet), 2) + pow( aaatmp, 2) );
+	  if(aaatmp < dq1dR) 
 	    {
-	      dq1dR=aaatmp;
-	      dq1sj=ijet;
+	      dq1dR = aaatmp;
+	      dq1sj = ijet;
 	    }
 	  
 	  // find delta R to dq2
@@ -583,7 +600,8 @@ int main(int argc, char* argv[])
 	    }
 	  // find delta R to d2
 	  aaatmp=abs(d2phi-aSlowJet.phi(ijet));
-	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
+	  if(aaatmp>3.14159) 
+	    aaatmp=6.2832-aaatmp;
 	  aaatmp=sqrt(pow(d2y-aSlowJet.y(ijet),2)+pow(aaatmp,2));
 	  if(aaatmp<d2dR) 
 	    {
@@ -664,23 +682,57 @@ int main(int argc, char* argv[])
       
       
       // find delta R between dark pions and dark quarts
+      Float_t hold1, hold2;
       for (int ii =0; ii< ndpis; ++ii) 
 	{
 	  Int_t ipt = ptdpis[ii];
 	  // find delta R to dq1
-	  aaatmp=abs(dq1phi-pythia.event[ipt].phi());
-	  if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
-	  aaatmp=sqrt(pow(dq1y-pythia.event[ipt].y(),2)+pow(aaatmp,2));
+	  aaatmp = abs( dq1phi - pythia.event[ipt].phi());
+	  if(aaatmp > 3.14159) 
+	    aaatmp = 6.2832 - aaatmp;
+	  aaatmp = sqrt( pow ( dq1y - pythia.event[ipt].y(), 2) + pow( aaatmp, 2) );
+	  
 	  // find delta R to dq2
-	  aaatmp2=abs(dq2phi-pythia.event[ipt].phi());
-	  if(aaatmp2>3.14159) aaatmp2=6.2832-aaatmp2;
-	  aaatmp2=sqrt(pow(dq2y-pythia.event[ipt].y(),2)+pow(aaatmp2,2));
+	  aaatmp2 = abs( dq2phi - pythia.event[ipt].phi() );
+	  if(aaatmp2 > 3.14159) 
+	    aaatmp2 = 6.2832 - aaatmp2;
+	  aaatmp2 = sqrt( pow( dq2y - pythia.event[ipt].y(), 2) + pow( aaatmp2, 2) );
+	  
+	  aaatmp = hold1;
+	  aaatmp2 = hold2;
 	  //take minimum
-	  if(aaatmp2<aaatmp) aaatmp=aaatmp2;
+	  if(aaatmp2 < aaatmp) 
+	    aaatmp = aaatmp2;
 	  //      if(aaatmp>2) cout<<"danger danger will robinson aaatmp large"<<endl;
 	  hdRdpisdjet->Fill(aaatmp);
+
+	  //Calculate impact parameter for daugheters of Dark Pi's
+	  Float_t cutR = .4;
+	  Float_t b0, b1, b2, b3, b4, DarkPiDauIp;
+	  int numPionDau;
+	  //Cut on delta R
+	  if ( hold1 < cutR )
+	    {
+	      numPionDau = pythia.event[ipt].daughter2() - pythia.event[ipt].daughter1() + 1;
+	      for (int hop = 0; hop < numPionDau; hop ++)
+		{
+		  int dip = pythia.event[ipt].daughter1() + hop;
+		  
+		  //Make sure Daughter is final
+		  if ( pythia.event[dip].isFinal() )
+		    {
+		      b0 = pythia.event[dip].pT();
+		      b1 = pythia.event[dip].xProd();
+		      b2 = pythia.event[dip].yProd();
+		      b3 = pythia.event[dip].phi();
+		      b4 = pythia.event[dip].charge();
+
+		      DarkPiDauIp = ImpactParameter( b0, b1, b2, b3, b4);
+		      IPVpiDau -> Fill( DarkPiDauIp );
+		    }
+		}
+	    }
 	}
-      
       
       // for each dark quark, output daughter tree until hit stable particle
       // dark quark 1
@@ -928,7 +980,9 @@ int main(int argc, char* argv[])
   //Histograms for Impact Parameter
   IPdown -> Write();
   IPdowndau -> Write();
-  
+  IPVdowndau -> Write();
+  IPVpiDau -> Write();
+  c1 -> SaveAs("TheScream.gif");
   c1 -> Write();
   
   delete outFile;
