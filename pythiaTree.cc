@@ -28,6 +28,7 @@
 
 //TCanvas For Drawing
 #include <TCanvas.h>
+#include <vector>
 
 using namespace Pythia8;
 
@@ -170,7 +171,8 @@ int main(int argc, char* argv[]) {
 
   Int_t ndpismax=100;
   Int_t ptdpis[100];
-
+  vector<Int_t> Dvpions;
+  int counter = 0;
 
   for (int iEvent = 0; iEvent < nEvent; ++iEvent) {
     if (!pythia.next()) continue;
@@ -611,6 +613,7 @@ int main(int argc, char* argv[]) {
     Float_t hold1, hold2;
 
     for (int ii =0; ii< ndpis; ++ii) {
+      unsigned sol;
       Int_t ipt = ptdpis[ii];
       // find delta R to dq1
       aaatmp=abs(dq1phi-pythia.event[ipt].phi());
@@ -631,12 +634,14 @@ int main(int argc, char* argv[]) {
       hdRdpisdjet->Fill(aaatmp);
       
       //Calculate impact parameter for daugheters of Dark Pi's
+      Int_t pidx;
       Float_t cutR = .4;
       Float_t b0, b1, b2, b3, b4, DarkPiDauIp;
       int numPionDau;
       //Cut on delta R
       if ( hold1 < cutR )
 	{
+	  pidx = Dvpions[sol];
 	  numPionDau = pythia.event[ipt].daughter2() - pythia.event[ipt].daughter1() + 1;
 	  for (int hop = 0; hop < numPionDau; hop ++)
 	    {
