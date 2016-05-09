@@ -139,9 +139,11 @@ int main(int argc, char* argv[]) {
   
   TH1F *IPdowndau = new TH1F("IPdowndau", "Closest approach first stable daughter", 200,-.01, .01);
 
-  TH1F *IPVdowndau = new TH1F("IPVdowndau", "Closest Appraoch First Stable Daugheter of Dark Particles", 100, -1000, 4000);
+  TH1F *IPVdowndau = new TH1F("IPVdowndau", "Closest Appraoch First Stable Daughter of Dark Particles", 100, -1000, 4000);
 
   TH1F *IPVpiDau = new TH1F("IPVpiDau", "Closest approach Stable Daughter of Dark Pi's cut Delta R < 0.4", 100, -1000, 4000); 
+
+  TH1F *IPregPiDau = new TH1F("IPregPiDau", "Closest approach Stable of Pi's cut Delta R < 0.4", 200, -100., 100);
 
   //Create Canvas for drawing histograms
   TCanvas *c1 = new TCanvas("c1", "demo", 200, 10, 900, 500);
@@ -171,12 +173,14 @@ int main(int argc, char* argv[]) {
 
   Int_t ndpismax=100;
   Int_t ptdpis[100];
-  vector<Int_t> Dvpions;
+  vector<int> Dvpions;
+  vector<int> regpion;
   int counter = 0;
+  int secount = 0;
 
   for (int iEvent = 0; iEvent < nEvent; ++iEvent) {
     if (!pythia.next()) continue;
-
+    
     if(idbg>0) {
       std::cout<<endl;
       std::cout<<endl;
@@ -192,8 +196,7 @@ int main(int argc, char* argv[]) {
     // Find number of all final charged particles.
     nCharged = 0;  // for counting the number of stable charged particles in the event
     nNeutral = 0;  // ditto neutral
-    nTot=0;
-    ndpis=0;  // number of dark pions with at least one stable daughter
+    nTot=0;    ndpis=0;  // number of dark pions with at least one stable daughter
     ndqs=0;  // number of dark quarks 
     ndq71=0; // number of dark quarks with 71 code
     ndqnm=0; // number of dark quarks with no dark quark mother
@@ -208,6 +211,18 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < pythia.event.size(); ++i) {  // loop over all particles in the event
       //      std::cout<<pythia.event[i].isCharged()<<endl;
 
+      //Look at Visible Pions
+      if (pythia.event[i].id() == 111 )
+	{
+	  secount++;
+	  regpion.assign( (secount - 1), i);
+	}
+      //Look at Dark pions
+      if (pythia.event[i].id() == 4900111 )
+	{
+	  counter++;
+	  Dvpions.assign( ( counter - 1 ), i);
+	}
       //  look at dark quarks
       if(abs(pythia.event[i].id())==4900101) {
 	ndqs++;  // count number of dark quarks in event
@@ -243,23 +258,26 @@ int main(int argc, char* argv[]) {
 	  }
 	}
       }
+      unsigned cntdpis;
       // look at all HV particles
-      if(abs(pythia.event[i].id())>4900000) {
-	int idHV = pythia.event[i].id();
-	Float_t mHV = pythia.event[i].m();
-	Float_t qHV = pythia.event[i].charge();
-        Float_t d0HV = sqrt(pow(pythia.event[i].xProd(),2)+pow(pythia.event[i].yProd(),2));
-	Int_t ndauHV = pythia.event[i].daughter2()-pythia.event[i].daughter1()+1;
-	Int_t HV = (idHV/abs(idHV))*(abs(idHV)-4900000);
-	hppidHV->Fill( HV);  // get the type of the particle
-        hmassHV->Fill( HV,mHV );
-        hqHV->Fill( HV,qHV );
-	hmHV->Fill(mHV);
-	hm2HV->Fill(mHV);
-	hd0HV->Fill(d0HV);
-	hstatus->Fill(pythia.event[i].status());
-	if(ndauHV<2) hstatus2->Fill(pythia.event[i].status());
-        hndau->Fill(ndauHV);
+      if(abs(pythia.event[i].id())>4900000) 
+	{
+
+	  int idHV = pythia.event[i].id();
+	  Float_t mHV = pythia.event[i].m();
+	  Float_t qHV = pythia.event[i].charge();
+	  Float_t d0HV = sqrt(pow(pythia.event[i].xProd(),2)+pow(pythia.event[i].yProd(),2));
+	  Int_t ndauHV = pythia.event[i].daughter2()-pythia.event[i].daughter1()+1;
+	  Int_t HV = (idHV/abs(idHV))*(abs(idHV)-4900000);
+	  hppidHV->Fill( HV);  // get the type of the particle
+	  hmassHV->Fill( HV,mHV );
+	  hqHV->Fill( HV,qHV );
+	  hmHV->Fill(mHV);
+	  hm2HV->Fill(mHV);
+	  hd0HV->Fill(d0HV);
+	  hstatus->Fill(pythia.event[i].status());
+	  if(ndauHV<2) hstatus2->Fill(pythia.event[i].status());
+	  hndau->Fill(ndauHV);
         hndau2->Fill(abs(HV),ndauHV);
 	//what are the dark gluon daughters?
 	if(HV==21) {
@@ -457,6 +475,63 @@ int main(int argc, char* argv[]) {
     d2pT=pythia.event[d2].pT();
     d2y=pythia.event[d2].y();
     d2phi=pythia.event[d2].phi();
+  
+    /*
+    for (int hifive = 0; hifive < secount; hifive++)
+      {
+	
+	Float_t abc, cde;
+	
+	//Find delta R between a regular pion and d1 quark
+	for (int wh = 0; wh < secount; wh++)
+	  {
+	    abc = abs( pythia.event[ regpion[wh] ].phi() - d1phi );
+	    if (abc > 3.14159)
+	      abc = 6.2832 - abc;
+	    abc = sqrt( pow( (pythia.event[ regpion[wh] ].y() - d1y), 2) + pow( abc, 2) ); 
+	  }
+	
+	//Find Delta R between regular pion and d2 quark
+	for (int jo = 0; jo < secount; jo++)
+	  {
+	    cde = abs( pythia.event[ regpion[jo] ].phi() - d2phi );
+	    if (cde > 3.14159)
+	      cde =6.2832 - cde;
+	    cde = sqrt( pow( (pythia.event[ regpion[jo] ].y() - d2y), 2) + pow( cde, 2) );
+	  } 
+	
+	//Find smaller R values
+	if (cde < abc)
+	  abc = cde;
+	
+	int regpidx;
+	Float_t regCutR = 0.4;
+	Float_t f0, f1, f2, f3, f4, RegPiDauIp;
+	int numRegPionDau;
+	//Cut on Delta R
+	if (abc < regCutR)
+	  {
+	    regpidx = regpion[hifive];
+	    numRegPionDau = pythia.event[regpidx].daughter2() - pythia.event[regpidx].daughter1() + 1;
+	    for ( int go = 0; go < numRegPionDau; go++)
+	      {
+		int help = pythia.event[regpidx].daughter1() + go;
+		
+		//Make sure daughter is final
+		if ( pythia.event[help].isFinal() )
+		  {
+		    f0 = pythia.event[help].pT();
+		    f1 = pythia.event[help].xProd();
+		    f2 = pythia.event[help].yProd();
+		    f3 = pythia.event[help].phi();
+		    f4 = pythia.event[help].charge();
+		    
+		    RegPiDauIp = ImpactParameter( f0, f1, f2, f3, f4);
+		    IPregPiDau -> Fill (RegPiDauIp);
+		  }
+	      }
+	  }
+	  }*/
 
     // delta r between dark quark and d quark
     //    Float_t bbb=99999.;
@@ -611,10 +686,10 @@ int main(int argc, char* argv[]) {
     // find delta R between dark pions and dark quarts
 
     Float_t hold1, hold2;
-
+    int sol;
     for (int ii =0; ii< ndpis; ++ii) {
-      unsigned sol;
       Int_t ipt = ptdpis[ii];
+
       // find delta R to dq1
       aaatmp=abs(dq1phi-pythia.event[ipt].phi());
       if(aaatmp>3.14159) aaatmp=6.2832-aaatmp;
@@ -634,35 +709,35 @@ int main(int argc, char* argv[]) {
       hdRdpisdjet->Fill(aaatmp);
       
       //Calculate impact parameter for daugheters of Dark Pi's
-      Int_t pidx;
+      int pidx;
       Float_t cutR = .4;
-      Float_t b0, b1, b2, b3, b4, DarkPiDauIp;
+      Float_t d0, d1, d2, d3, d4, DarkPiDauIp;
       int numPionDau;
       //Cut on delta R
+
       if ( hold1 < cutR )
 	{
-	  pidx = Dvpions[sol];
-	  numPionDau = pythia.event[ipt].daughter2() - pythia.event[ipt].daughter1() + 1;
+	  pidx = Dvpions[ii];
+	  numPionDau = pythia.event[pidx].daughter2() - pythia.event[pidx].daughter1() + 1;
 	  for (int hop = 0; hop < numPionDau; hop ++)
 	    {
-	      int dip = pythia.event[ipt].daughter1() + hop;
+	      int dip = pythia.event[pidx].daughter1() + hop;
 	      
 	      //Make sure Daughter is final
 	      if ( pythia.event[dip].isFinal() )
 		{
-		  b0 = pythia.event[dip].pT();
-		  b1 = pythia.event[dip].xProd();
-		  b2 = pythia.event[dip].yProd();
-		  b3 = pythia.event[dip].phi();
-		  b4 = pythia.event[dip].charge();
+		  d0 = pythia.event[dip].pT();
+		  d1 = pythia.event[dip].xProd();
+		  d2 = pythia.event[dip].yProd();
+		  d3 = pythia.event[dip].phi();
+		  d4 = pythia.event[dip].charge();
 		  
-		  DarkPiDauIp = ImpactParameter( b0, b1, b2, b3, b4);
+		  DarkPiDauIp = ImpactParameter( d0, d1, d2, d3, d4);
 		  IPVpiDau -> Fill( DarkPiDauIp );
 		}
 	    }
 	}
     }
-
 
     // for each dark quark, output daughter tree until hit stable particle
     // dark quark 1
@@ -885,6 +960,7 @@ int main(int argc, char* argv[]) {
   IPdowndau -> Write();
   IPVdowndau -> Write();
   IPVpiDau -> Write();
+  IPregPiDau -> Write();
   c1 -> SaveAs("TheScream.gif");
   c1 -> Write();
   /**/

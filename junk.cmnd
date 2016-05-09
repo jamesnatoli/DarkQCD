@@ -39,7 +39,7 @@ HiddenValley:fragment = on
 
 ! Mediator settings
 HiddenValley:spinFv = 0			! Spin of bi-fundamental res.
-4900001:m0 = 1000                   	! Mass of bi-fundamental resonance
+4900001:m0 = 300                   	! Mass of bi-fundamental resonance
 4900001:mWidth = 10                	! Width of bi-fundamental resonance
 ! The following is required due to a bug in v8183, fixed in 8185 and later
 4900001:isResonance = on
